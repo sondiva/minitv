@@ -29,6 +29,7 @@ import {
 import { api, errorText } from "../api";
 import { useConfirm } from "../confirm";
 import { useCanWriteContent } from "../me";
+import { t } from "../copy";
 
 type DramaRow = {
   id: number;
@@ -43,24 +44,24 @@ type DramaRow = {
   updated_at: string | null;
 };
 
-const STATUS_LABELS: Record<string, { text: string; color: string }> = {
-  draft: { text: "草稿", color: "default" },
-  in_review: { text: "审核中", color: "orange" },
-  published: { text: "已上架", color: "green" },
-  unpublished: { text: "已下架", color: "red" },
-};
+function STATUS_LABELS(): Record<string, { text: string; color: string }> { return {
+  draft: { text: t("common.draft"), color: "default" },
+  in_review: { text: t("common.in_review"), color: "orange" },
+  published: { text: t("common.published"), color: "green" },
+  unpublished: { text: t("common.unpublished"), color: "red" },
+};; }
 
 /** 顶部统计条的顺序、配色与专属高亮背景配置 */
-const STAT_CARDS: {
+function STAT_CARDS(): {
   value?: string;
   label: string;
   color: string;
   activeBg: string;
   activeBorder: string;
   icon: React.ReactNode;
-}[] = [
+}[] { return [
   {
-    label: "全部剧集",
+    label: t("dramas.all_dramas"),
     color: "#1677ff",
     activeBg: "#eff8ff",
     activeBorder: "#b2ddff",
@@ -68,7 +69,7 @@ const STAT_CARDS: {
   },
   {
     value: "published",
-    label: "已上架",
+    label: t("common.published"),
     color: "#12b76a",
     activeBg: "#edfcf2",
     activeBorder: "#a6f4c5",
@@ -76,7 +77,7 @@ const STAT_CARDS: {
   },
   {
     value: "in_review",
-    label: "审核中",
+    label: t("common.in_review"),
     color: "#f79009",
     activeBg: "#fff9f0",
     activeBorder: "#fedf89",
@@ -84,7 +85,7 @@ const STAT_CARDS: {
   },
   {
     value: "draft",
-    label: "草稿",
+    label: t("common.draft"),
     color: "#667085",
     activeBg: "#f8f9fa",
     activeBorder: "#d0d5dd",
@@ -92,13 +93,13 @@ const STAT_CARDS: {
   },
   {
     value: "unpublished",
-    label: "已下架",
+    label: t("common.unpublished"),
     color: "#f04438",
     activeBg: "#fef3f2",
     activeBorder: "#fecdca",
     icon: <CloseCircleFilled style={{ color: "#f04438", fontSize: 14 }} />,
   },
-];
+];; }
 
 type StatusCounts = {
   all: number;
@@ -116,7 +117,7 @@ function StatCardItem({
   count,
   onClick,
 }: {
-  card: (typeof STAT_CARDS)[number];
+  card: ReturnType<typeof STAT_CARDS>[number];
   active: boolean;
   count: number;
   onClick: () => void;
@@ -163,7 +164,7 @@ function StatCardItem({
         >
           {count}
         </span>
-        <span style={{ fontSize: 12, color: "#98a2b3" }}>部</span>
+        <span style={{ fontSize: 12, color: "#98a2b3" }}>{t("common.dramas_unit")}</span>
       </div>
     </div>
   );
@@ -214,16 +215,16 @@ export default function Dramas() {
    */
   const togglePublish = async (row: DramaRow, next: boolean) => {
     const missing = next
-      ? [!row.cover_url ? "还没有封面" : null, row.episode_count === 0 ? "还没有分集" : null].filter(Boolean)
+      ? [!row.cover_url ? t("dramas.no_cover_yet") : null, row.episode_count === 0 ? t("dramaedit.no_episodes_yet") : null].filter(Boolean)
       : [];
     if (missing.length) {
       confirm({
-        title: `《${row.title}》还不完整`,
-        okText: "仍然上架",
-        cancelText: "取消",
+        title: t("dramas.incomplete_title", {v0: row.title}),
+        okText: t("dramas.publish_anyway"),
+        cancelText: t("common.cancel"),
         content: (
           <Typography.Text>
-            {missing.join("、")}。上架后用户就能在 App 里看到该剧，确定仍然上架吗？
+            {t("dramas.publish_confirm_missing", {v0: missing.join("、")})}
           </Typography.Text>
         ),
         onOk: () => setPublishStatus(row, next),
@@ -241,7 +242,12 @@ export default function Dramas() {
         method: "POST",
         body: JSON.stringify({ to_status }),
       });
-      message.success(`《${row.title}》已${next ? "上架" : "下架"}`);
+      message.success(
+        t("dramas.publish_status_changed", {
+          v0: row.title,
+          v1: next ? t("episodespanel.publish") : t("drama.unpublish"),
+        })
+      );
       if (status) {
         await load();
       } else {
@@ -254,7 +260,12 @@ export default function Dramas() {
         });
       }
     } catch (e) {
-      message.error(`${next ? "上架" : "下架"}失败：${errorText(e)}`);
+      message.error(
+        t("drama.status_action_failed", {
+          v0: next ? t("episodespanel.publish") : t("drama.unpublish"),
+          v1: errorText(e),
+        })
+      );
     } finally {
       setTogglingId(null);
     }
@@ -268,12 +279,12 @@ export default function Dramas() {
         method: "POST",
         body: JSON.stringify({ title: values.title.trim() }),
       });
-      message.success(`已创建草稿 #${created.id}，补全信息后即可上架`);
+      message.success(t("dramas.draft_created", {v0: created.id}));
       setCreateOpen(false);
       createForm.resetFields();
       navigate(`/dramas/${created.id}`);
     } catch (e) {
-      message.error(`创建失败：${errorText(e)}`);
+      message.error(t("dramas.create_failed", {v0: errorText(e)}));
     } finally {
       setCreating(false);
     }
@@ -290,7 +301,7 @@ export default function Dramas() {
             gap: 12,
           }}
         >
-          {STAT_CARDS.map((card) => {
+          {STAT_CARDS().map((card) => {
             const active = (status ?? undefined) === card.value;
             const n = card.value ? counts[card.value as keyof StatusCounts] : counts.all;
             return (
@@ -341,22 +352,22 @@ export default function Dramas() {
                   onClick={() => setCreateOpen(true)}
                   style={{ fontWeight: 500 }}
                 >
-                  新建剧集
+                  {t("dramas.create_drama")}
                 </Button>
               )}
               <Select
                 allowClear
-                placeholder="全部状态"
+                placeholder={t("common.all_status")}
                 style={{ width: 130 }}
                 value={status}
                 onChange={(v) => {
                   setPage(1);
                   setStatus(v);
                 }}
-                options={Object.entries(STATUS_LABELS).map(([value, { text }]) => ({ value, label: text }))}
+                options={Object.entries(STATUS_LABELS()).map(([value, { text }]) => ({ value, label: text }))}
               />
               <Input.Search
-                placeholder="搜索剧名 / 剧集ID..."
+                placeholder={t("dramas.search_title_id")}
                 style={{ width: 260 }}
                 onSearch={(v) => {
                   setPage(1);
@@ -377,7 +388,7 @@ export default function Dramas() {
                   fontSize: 12,
                 }}
               >
-                当前筛选 <strong>{total}</strong> 部
+                {t("dramas.current_filter")} <strong>{total}</strong> {t("common.dramas_unit")}
               </Tag>
             </Space>
           </div>
@@ -394,7 +405,7 @@ export default function Dramas() {
               total,
               showSizeChanger: true,
               pageSizeOptions: ["10", "20", "50", "100"],
-              showTotal: (t) => `共 ${t} 部剧集`,
+              showTotal: (total) => t("dramas.total_dramas", {v0: total}),
               style: { padding: "16px 20px", margin: 0 },
               onChange: (p, s) => {
                 setPage(p);
@@ -403,7 +414,7 @@ export default function Dramas() {
             }}
             columns={[
               {
-                title: "封面 / ID",
+                title: t("dramas.cover_id"),
                 key: "cover",
                 width: 124,
                 render: (_, r) => (
@@ -438,7 +449,7 @@ export default function Dramas() {
                           flexShrink: 0,
                         }}
                       >
-                        无封面
+                        {t("groups.no_cover")}
                       </div>
                     )}
                     <span
@@ -460,7 +471,7 @@ export default function Dramas() {
                 ),
               },
               {
-                title: "剧名 / 标签",
+                title: t("dramas.title_tags"),
                 key: "title",
                 minWidth: 240,
                 render: (_, r) => (
@@ -498,30 +509,30 @@ export default function Dramas() {
                       </Space>
                     ) : (
                       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                        暂无标签
+                        {t("dramas.no_tags")}
                       </Typography.Text>
                     )}
                   </div>
                 ),
               },
               {
-                title: "状态",
+                title: t("common.status"),
                 dataIndex: "status",
                 width: 160,
                 render: (s: string, r) => {
-                  const meta = STATUS_LABELS[s] ?? { text: s, color: "default" };
+                  const meta = STATUS_LABELS()[s] ?? { text: s, color: "default" };
                   const checked = s === "published";
                   const toggleable = s === "published" || s === "unpublished";
                   const tip = !toggleable
                     ? s === "draft"
-                      ? "草稿：先进入详情页提交审核，通过后才能上架"
-                      : "审核中：进入详情页通过并上架"
+                      ? t("dramas.draft_tip")
+                      : t("dramas.reviewing_tip")
                     : checked
-                      ? "点击下架（客户端将隐藏该剧）"
-                      : "点击重新上架";
+                      ? t("dramas.unpublish_tip")
+                      : t("dramas.republish_tip");
                   return (
                     <Space size={8} align="center">
-                      <Tooltip title={canWrite ? tip : "当前角色只能查看状态"}>
+                      <Tooltip title={canWrite ? tip : t("dramas.view_only_role")}>
                         <span style={{ display: "inline-flex" }}>
                           <Switch
                             size="small"
@@ -550,42 +561,42 @@ export default function Dramas() {
                 },
               },
               {
-                title: "免费集数",
+                title: t("partnerdramaedit.free_episodes"),
                 dataIndex: "free_episode_count",
                 width: 96,
                 render: (v: number) => (
                   <span style={{ fontVariantNumeric: "tabular-nums", color: "#344054", fontWeight: 500 }}>
-                    {v} <span style={{ fontSize: 12, color: "#98a2b3" }}>集</span>
+                    {v} <span style={{ fontSize: 12, color: "#98a2b3" }}>{t("common.episodes_unit")}</span>
                   </span>
                 ),
               },
               {
-                title: "单集金币",
+                title: t("partnerdramaedit.coins_per_episode"),
                 dataIndex: "coin_price_per_episode",
                 width: 96,
                 render: (v: number) =>
                   v === 0 ? (
                     <Tag bordered={false} style={{ background: "#ecfdf3", color: "#027a48", borderRadius: 4, margin: 0 }}>
-                      免费
+                      {t("dramas.free")}
                     </Tag>
                   ) : (
                     <span style={{ fontVariantNumeric: "tabular-nums", color: "#d97706", fontWeight: 600 }}>
-                      {v} <span style={{ fontSize: 12, color: "#98a2b3", fontWeight: 400 }}>币</span>
+                      {v} <span style={{ fontSize: 12, color: "#98a2b3", fontWeight: 400 }}>{t("dramas.coins_suffix")}</span>
                     </span>
                   ),
               },
               {
-                title: "总集数",
+                title: t("dramas.total_episodes"),
                 dataIndex: "episode_count",
                 width: 88,
                 render: (v: number) => (
                   <span style={{ fontVariantNumeric: "tabular-nums", color: "#344054", fontWeight: 500 }}>
-                    {v} <span style={{ fontSize: 12, color: "#98a2b3" }}>集</span>
+                    {v} <span style={{ fontSize: 12, color: "#98a2b3" }}>{t("common.episodes_unit")}</span>
                   </span>
                 ),
               },
               {
-                title: "播放量",
+                title: t("dramas.play_count"),
                 dataIndex: "play_count",
                 width: 92,
                 render: (v: number) => (
@@ -601,7 +612,7 @@ export default function Dramas() {
                 ),
               },
               {
-                title: "最近更新",
+                title: t("dramas.recently_updated"),
                 dataIndex: "updated_at",
                 width: 140,
                 render: (v: string | null) => {
@@ -617,7 +628,7 @@ export default function Dramas() {
                 },
               },
               {
-                title: "操作",
+                title: t("common.actions"),
                 key: "actions",
                 width: 90,
                 render: (_, r) => (
@@ -628,7 +639,7 @@ export default function Dramas() {
                     style={{ fontWeight: 600, paddingInline: 4 }}
                     onClick={() => navigate(`/dramas/${r.id}`)}
                   >
-                    进入
+                    {t("dramas.enter")}
                   </Button>
                 ),
               },
@@ -638,10 +649,10 @@ export default function Dramas() {
 
         {/* 新建剧集弹窗 */}
         <Modal
-          title="新建剧集"
+          title={t("dramas.create_drama")}
           open={createOpen}
-          okText="创建并补全信息"
-          cancelText="取消"
+          okText={t("dramas.create_and_complete")}
+          cancelText={t("common.cancel")}
           confirmLoading={creating}
           onCancel={() => {
             setCreateOpen(false);
@@ -653,11 +664,11 @@ export default function Dramas() {
         >
           <Form form={createForm} layout="vertical" onFinish={onCreate} preserve={false} style={{ marginTop: 12 }}>
             <Form.Item
-              label="剧名"
+              label={t("common.drama_name")}
               name="title"
               rules={[
-                { required: true, whitespace: true, message: "请填写剧名" },
-                { max: 200, message: "剧名最多 200 个字" },
+                { required: true, whitespace: true, message: t("dramas.enter_title") },
+                { max: 200, message: t("dramas.title_max_length") },
               ]}
             >
               <Input
@@ -665,14 +676,14 @@ export default function Dramas() {
                 maxLength={200}
                 showCount
                 autoFocus
-                placeholder="例如：The CEO of Flash Marriage Adores Me"
+                placeholder={t("dramas.title_example")}
               />
             </Form.Item>
             <Alert
               type="info"
               showIcon
-              message="新剧创建后将保存为「草稿」"
-              description="创建后将自动进入详情页：上传海报封面 → 录入简介与标签 → 批量上传视频分集 → 提交审核。"
+              message={t("dramas.draft_notice")}
+              description={t("dramas.create_flow")}
               style={{ borderRadius: 8, background: "#fafbfd", border: "1px solid #d0d5dd" }}
             />
           </Form>

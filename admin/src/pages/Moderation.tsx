@@ -28,6 +28,7 @@ import {
 } from "@ant-design/icons";
 import { api, errorText } from "../api";
 import { useConfirm } from "../confirm";
+import { t } from "../copy";
 
 /**
  * 自动审核配置：用 OpenAI 模型在评论落库前给出 allow / review / block 判定。
@@ -74,15 +75,15 @@ type TestResult = {
   };
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  sexual: "色情露骨",
-  violence: "暴力血腥",
-  hate: "仇恨歧视",
-  harassment: "骚扰攻击",
-  spam: "广告引流",
-  privacy: "隐私信息",
-  illegal: "违法内容",
-};
+function CATEGORY_LABELS(): Record<string, string> { return {
+  sexual: t("moderation.sexual"),
+  violence: t("moderation.violence"),
+  hate: t("moderation.hate"),
+  harassment: t("moderation.harassment"),
+  spam: t("moderation.spam"),
+  privacy: t("moderation.privacy"),
+  illegal: t("moderation.illegal"),
+};; }
 
 const MODEL_OPTIONS = [
   { value: "deepseek-flash" },
@@ -91,17 +92,17 @@ const MODEL_OPTIONS = [
   { value: "gpt-4o" },
 ];
 
-const VERDICT_META: Record<string, { color: string; label: string }> = {
-  allow: { color: "green", label: "通过" },
-  review: { color: "orange", label: "转人工" },
-  block: { color: "red", label: "拦截" },
-};
+function VERDICT_META(): Record<string, { color: string; label: string }> { return {
+  allow: { color: "green", label: t("moderation.approve") },
+  review: { color: "orange", label: t("moderation.escalate_manual") },
+  block: { color: "red", label: t("moderation.block") },
+};; }
 
-const STATUS_LABEL: Record<string, string> = {
-  approved: "直接发布",
-  pending: "进入待审核",
-  deleted: "直接删除",
-};
+function STATUS_LABEL(): Record<string, string> { return {
+  approved: t("moderation.publish_directly"),
+  pending: t("moderation.to_pending_review"),
+  deleted: t("moderation.delete_directly"),
+};; }
 
 const SAMPLE = "Best episode yet! Where can I watch the next one?";
 
@@ -131,7 +132,7 @@ export default function Moderation() {
     try {
       apply(await api<Settings>("/admin/v1/moderation/settings"));
     } catch (e) {
-      message.error(`读取配置失败：${errorText(e)}`);
+      message.error(t("moderation.load_config_failed", {v0: errorText(e)}));
     } finally {
       setLoading(false);
     }
@@ -161,10 +162,10 @@ export default function Moderation() {
       });
       apply(next);
       message.success(
-        next.enabled ? "已保存，新评论将自动判定" : "已保存，自动审核当前关闭",
+        next.enabled ? t("moderation.saved_auto_judge") : t("moderation.saved_auto_off"),
       );
     } catch (e) {
-      message.error(`保存失败：${errorText(e)}`);
+      message.error(t("stagepages.save_failed", {v0: errorText(e)}));
     } finally {
       setSaving(false);
     }
@@ -172,7 +173,7 @@ export default function Moderation() {
 
   const runTest = async () => {
     if (!testText.trim()) {
-      message.warning("先输入一段评论文本");
+      message.warning(t("moderation.enter_comment_first"));
       return;
     }
     setTesting(true);
@@ -184,7 +185,7 @@ export default function Moderation() {
         }),
       );
     } catch (e) {
-      message.error(`测试失败：${errorText(e)}`);
+      message.error(t("moderation.test_failed", {v0: errorText(e)}));
     } finally {
       setTesting(false);
     }
@@ -221,11 +222,11 @@ export default function Moderation() {
       closeKey();
       message.success(
         payload.clear_api_key
-          ? "已清除后台密钥，改用服务器环境变量"
-          : `密钥已保存，当前生效：${next.key.masked}`,
+          ? t("moderation.key_cleared_env")
+          : t("moderation.key_saved_active", {v0: next.key.masked}),
       );
     } catch (e) {
-      message.error(`密钥保存失败：${errorText(e)}`);
+      message.error(t("moderation.key_save_failed", {v0: errorText(e)}));
     } finally {
       setKeySaving(false);
     }
@@ -234,7 +235,7 @@ export default function Moderation() {
   const saveKey = () => {
     const value = keyDraft.trim();
     if (value.length < 8) {
-      message.warning("密钥至少 8 位，且不能包含空格");
+      message.warning(t("moderation.key_min_length"));
       return;
     }
     void submitKey({ api_key: value });
@@ -242,12 +243,12 @@ export default function Moderation() {
 
   const clearKey = () => {
     confirm({
-      title: "清除后台保存的密钥",
+      title: t("moderation.clear_saved_key"),
       content: data?.key_env_configured
-        ? "清除后将改用服务器环境变量 OPENAI_API_KEY。"
-        : "清除后自动审核将无法调用模型，评论会按降级策略进入待审核。",
+        ? t("moderation.clear_fallback_env")
+        : t("moderation.clear_fallback_note"),
       danger: true,
-      okText: "清除",
+      okText: t("moderation.clear"),
       onOk: () => submitKey({ clear_api_key: true }),
     });
   };
@@ -256,7 +257,7 @@ export default function Moderation() {
   const checkKey = async () => {
     const value = keyDraft.trim();
     if (value.length < 8) {
-      message.warning("先粘贴要验证的密钥");
+      message.warning(t("moderation.paste_key_first"));
       return;
     }
     setKeyChecking(true);
@@ -269,7 +270,7 @@ export default function Moderation() {
         }),
       );
     } catch (e) {
-      message.error(`验证失败：${errorText(e)}`);
+      message.error(t("moderation.verify_failed", {v0: errorText(e)}));
     } finally {
       setKeyChecking(false);
     }
@@ -290,18 +291,18 @@ export default function Moderation() {
       >
         <Space direction="vertical" size={4}>
           <Typography.Title level={4} style={{ margin: 0 }}>
-            自动审核
+            {t("moderation.auto_review")}
           </Typography.Title>
           <Typography.Text type="secondary">
-            评论提交时调用 OpenAI 模型判定，通过的直接发布，疑似违规的转人工，失败的按降级策略处理。
+            {t("moderation.judge_flow_note")}
           </Typography.Text>
         </Space>
         <Space>
           <Button icon={<ExperimentOutlined />} onClick={() => setTestOpen(true)}>
-            测试判定
+            {t("moderation.test_judge")}
           </Button>
           <Button icon={<ReloadOutlined />} onClick={() => void load()} loading={loading}>
-            刷新
+            {t("common.refresh")}
           </Button>
         </Space>
       </div>
@@ -311,13 +312,17 @@ export default function Moderation() {
           type="success"
           showIcon
           icon={<KeyOutlined />}
-          message={`审核密钥已配置（${key.masked} · ${
-            key.source === "database" ? "后台配置，加密存储" : "服务器环境变量"
-          }）`}
-          description="更换或清除密钥可直接在右侧操作，保存后立即生效、无需重启；完整密钥不会回显。"
+          message={t("moderation.key_configured", {
+            v0: key.masked,
+            v1:
+              key.source === "database"
+                ? t("moderation.configured_in_backend")
+                : t("moderation.server_env_var"),
+          })}
+          description={t("moderation.key_replace_note")}
           action={
             <Button size="small" icon={<KeyOutlined />} onClick={() => setKeyOpen(true)}>
-              更换密钥
+              {t("moderation.replace_key")}
             </Button>
           }
           style={{ borderRadius: 8 }}
@@ -327,11 +332,11 @@ export default function Moderation() {
           type="warning"
           showIcon
           icon={<KeyOutlined />}
-          message="未配置自动审核密钥"
-          description="自动审核无法调用模型，评论会按降级策略处理。点右侧填写密钥（加密存库），或写入服务器 /opt/minitv/.env 的 OPENAI_API_KEY。"
+          message={t("moderation.key_not_configured")}
+          description={t("moderation.key_missing_note")}
           action={
             <Button size="small" type="primary" icon={<KeyOutlined />} onClick={() => setKeyOpen(true)}>
-              配置密钥
+              {t("moderation.configure_key")}
             </Button>
           }
           style={{ borderRadius: 8 }}
@@ -345,12 +350,12 @@ export default function Moderation() {
             title={
               <Space size={8}>
                 <ApiOutlined />
-                <span>模型与开关</span>
+                <span>{t("moderation.model_switches")}</span>
               </Space>
             }
             extra={
               <Form.Item name="enabled" valuePropName="checked" noStyle>
-                <Switch checkedChildren="启用" unCheckedChildren="停用" />
+                <Switch checkedChildren={t("common.enable")} unCheckedChildren={t("groups.deactivate")} />
               </Form.Item>
             }
             style={{ borderRadius: 10 }}
@@ -358,10 +363,10 @@ export default function Moderation() {
             <Row gutter={[16, 0]}>
               <Col xs={24} md={10}>
                 <Form.Item
-                  label="模型"
+                  label={t("moderation.model")}
                   name="model"
-                  rules={[{ required: true, message: "请填写模型名称" }]}
-                  extra="必须是该接口支持 chat/completions 且返回 JSON 的模型"
+                  rules={[{ required: true, message: t("moderation.enter_model_name") }]}
+                  extra={t("moderation.model_requirement")}
                 >
                   <AutoComplete
                     options={MODEL_OPTIONS}
@@ -374,32 +379,32 @@ export default function Moderation() {
               </Col>
               <Col xs={24} md={14}>
                 <Form.Item
-                  label="接口地址（Base URL）"
+                  label={t("moderation.base_url")}
                   name="base_url"
                   rules={[
-                    { required: true, message: "请填写接口地址" },
-                    { pattern: /^https?:\/\//, message: "必须以 http:// 或 https:// 开头" },
+                    { required: true, message: t("moderation.enter_base_url") },
+                    { pattern: /^https?:\/\//, message: t("moderation.base_url_must_http") },
                   ]}
-                  extra="兼容 OpenAI 协议的中转地址也可以；末尾不要带 /chat/completions"
+                  extra={t("moderation.base_url_hint")}
                 >
                   <Input placeholder="https://codex.apiz.ai/v1" />
                 </Form.Item>
               </Col>
               <Col xs={24} md={8}>
-                <Form.Item label="超时（秒）" name="timeout_seconds">
+                <Form.Item label={t("moderation.timeout_seconds")} name="timeout_seconds">
                   <InputNumber min={1} max={30} style={{ width: "100%" }} />
                 </Form.Item>
               </Col>
               <Col xs={24} md={16}>
                 <Form.Item
-                  label="模型不可用时的降级"
+                  label={t("moderation.fallback_when_unavailable")}
                   name="fallback_action"
-                  extra="超时、限流、密钥失效等情况下，评论落到哪个状态"
+                  extra={t("moderation.fallback_hint")}
                 >
                   <Segmented
                     options={[
-                      { label: "进入待审核", value: "pending" },
-                      { label: "直接发布", value: "approved" },
+                      { label: t("moderation.to_pending_review"), value: "pending" },
+                      { label: t("moderation.publish_directly"), value: "approved" },
                     ]}
                   />
                 </Form.Item>
@@ -412,7 +417,7 @@ export default function Moderation() {
             title={
               <Space size={8}>
                 <SafetyCertificateOutlined />
-                <span>审核规则</span>
+                <span>{t("moderation.review_rules")}</span>
               </Space>
             }
             extra={
@@ -420,29 +425,29 @@ export default function Moderation() {
                 size="small"
                 onClick={() => form.setFieldValue("system_prompt", data?.default_prompt ?? "")}
               >
-                恢复默认规则
+                {t("moderation.restore_default_rules")}
               </Button>
             }
             style={{ borderRadius: 10 }}
           >
             <Form.Item
-              label="审核维度"
+              label={t("moderation.review_dimensions")}
               name="categories"
-              extra="维度会写进系统提示词，模型只在这些范围内判断"
+              extra={t("moderation.dimensions_hint")}
             >
               <Checkbox.Group
-                options={(data?.default_categories ?? Object.keys(CATEGORY_LABELS)).map((value) => ({
+                options={(data?.default_categories ?? Object.keys(CATEGORY_LABELS())).map((value) => ({
                   value,
-                  label: CATEGORY_LABELS[value] ?? value,
+                  label: CATEGORY_LABELS()[value] ?? value,
                 }))}
               />
             </Form.Item>
 
             <Form.Item
-              label="系统提示词"
+              label={t("moderation.system_prompt")}
               name="system_prompt"
-              rules={[{ required: true, message: "系统提示词不能为空" }]}
-              extra="必须要求模型返回 JSON：verdict / score / reason；{categories} 会被替换为上方维度"
+              rules={[{ required: true, message: t("moderation.system_prompt_required") }]}
+              extra={t("moderation.json_requirement")}
             >
               <Input.TextArea rows={11} style={{ fontFamily: "var(--font-mono, monospace)" }} />
             </Form.Item>
@@ -450,18 +455,18 @@ export default function Moderation() {
             <Row gutter={[16, 0]}>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="自动通过阈值"
+                  label={t("moderation.auto_approve_threshold")}
                   name="approve_threshold"
-                  extra="allow 且置信度 ≥ 该值时直接发布"
+                  extra={t("moderation.approve_threshold_hint")}
                 >
                   <InputNumber min={0} max={1} step={0.05} style={{ width: "100%" }} />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
-                  label="自动拦截阈值"
+                  label={t("moderation.auto_block_threshold")}
                   name="block_threshold"
-                  extra="block 且置信度 ≥ 该值时直接删除，否则转人工"
+                  extra={t("moderation.block_threshold_hint")}
                 >
                   <InputNumber min={0} max={1} step={0.05} style={{ width: "100%" }} />
                 </Form.Item>
@@ -472,29 +477,29 @@ export default function Moderation() {
               type="info"
               showIcon
               style={{ borderRadius: 8 }}
-              message="判定区间"
-              description="allow + 高分 → 已发布；block + 高分 → 已删除；其余（review、低分、模型失败）→ 待审核。人工审核结果始终优先。"
+              message={t("moderation.judgement_range")}
+              description={t("moderation.judgement_range_note")}
             />
           </Card>
         </Space>
 
         <Space style={{ marginTop: 20 }}>
           <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving}>
-            保存配置
+            {t("moderation.save_config")}
           </Button>
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
             {data?.updated_at
-              ? `上次保存：${new Date(data.updated_at).toLocaleString()}`
-              : "尚未保存过"}
+              ? t("moderation.last_saved", {v0: new Date(data.updated_at).toLocaleString()})
+              : t("moderation.never_saved")}
           </Typography.Text>
         </Space>
       </Form>
 
       <Modal
         open={testOpen}
-        title="测试自动判定"
-        okText="开始测试"
-        cancelText="关闭"
+        title={t("moderation.test_auto_judge")}
+        okText={t("moderation.start_test")}
+        cancelText={t("common.close")}
         confirmLoading={testing}
         onOk={() => void runTest()}
         onCancel={() => setTestOpen(false)}
@@ -502,33 +507,33 @@ export default function Moderation() {
       >
         <Space direction="vertical" style={{ width: "100%" }} size={12}>
           <Typography.Text type="secondary">
-            使用已保存的配置调用模型，不会写入评论表。修改模型或提示词后请先保存再测试。
+            {t("moderation.test_note")}
           </Typography.Text>
           <Input.TextArea
             rows={4}
             value={testText}
             onChange={(event) => setTestText(event.target.value)}
-            placeholder="输入一条评论文本"
+            placeholder={t("moderation.enter_comment_text")}
           />
           {testResult && (
             <Card size="small" style={{ borderRadius: 8 }}>
               <Space direction="vertical" size={8} style={{ width: "100%" }}>
                 <Space wrap>
-                  <Tag color={VERDICT_META[testResult.result.verdict]?.color ?? "default"}>
-                    {VERDICT_META[testResult.result.verdict]?.label ?? testResult.result.verdict}
+                  <Tag color={VERDICT_META()[testResult.result.verdict]?.color ?? "default"}>
+                    {VERDICT_META()[testResult.result.verdict]?.label ?? testResult.result.verdict}
                   </Tag>
-                  <Typography.Text>置信度 {testResult.result.score}</Typography.Text>
+                  <Typography.Text>{t("moderation.confidence_score", {v0: testResult.result.score})}</Typography.Text>
                   <Typography.Text type="secondary">
                     {testResult.result.model} · {testResult.result.latency_ms} ms
                   </Typography.Text>
                   <Tag color={testResult.status === "approved" ? "green" : testResult.status === "deleted" ? "red" : "orange"}>
-                    落库状态：{STATUS_LABEL[testResult.status] ?? testResult.status}
+                    {t("moderation.storage_status", {v0: STATUS_LABEL()[testResult.status] ?? testResult.status})}
                   </Tag>
                 </Space>
-                <Typography.Text>{testResult.result.reason || "（模型未给出原因）"}</Typography.Text>
+                <Typography.Text>{testResult.result.reason || t("moderation.no_reason")}</Typography.Text>
                 {!testResult.enabled && (
                   <Typography.Text type="warning">
-                    自动审核当前处于停用状态，正式评论不会走模型判定。
+                    {t("moderation.auto_disabled_note")}
                   </Typography.Text>
                 )}
               </Space>
@@ -539,31 +544,31 @@ export default function Moderation() {
 
       <Modal
         open={keyOpen}
-        title="自动审核密钥"
+        title={t("moderation.auto_review_key")}
         width={560}
         onCancel={closeKey}
         footer={
           <Space>
             {data?.key_from_database && (
               <Button danger type="text" onClick={clearKey} loading={keySaving}>
-                清除后台密钥
+                {t("moderation.clear_backend_key")}
               </Button>
             )}
-            <Button onClick={closeKey}>取消</Button>
+            <Button onClick={closeKey}>{t("common.cancel")}</Button>
             <Button
               type="primary"
               onClick={saveKey}
               loading={keySaving}
               disabled={keyDraft.trim().length < 8}
             >
-              保存密钥
+              {t("moderation.save_key")}
             </Button>
           </Space>
         }
       >
         <Space direction="vertical" size={12} style={{ width: "100%" }}>
           <Typography.Text type="secondary">
-            密钥加密后保存在数据库，保存即刻生效、无需重启服务；页面只回显尾号，完整值无法再读出。
+            {t("moderation.key_storage_note")}
           </Typography.Text>
           <Input.Password
             value={keyDraft}
@@ -574,18 +579,18 @@ export default function Moderation() {
           />
           <Space wrap size={8}>
             <Button size="small" onClick={() => void checkKey()} loading={keyChecking}>
-              验证密钥
+              {t("moderation.verify_key")}
             </Button>
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
               {data?.key_env_configured
-                ? "服务器环境变量 OPENAI_API_KEY：已配置（清除后台密钥后自动兜底）"
-                : "服务器环境变量 OPENAI_API_KEY：未配置"}
+                ? t("moderation.env_key_configured")
+                : t("moderation.env_key_missing")}
             </Typography.Text>
           </Space>
           {keyCheck && (
             <Space wrap size={8}>
-              <Tag color={VERDICT_META[keyCheck.result.verdict]?.color ?? "default"}>
-                验证通过 · {VERDICT_META[keyCheck.result.verdict]?.label ?? keyCheck.result.verdict}
+              <Tag color={VERDICT_META()[keyCheck.result.verdict]?.color ?? "default"}>
+                {t("moderation.verified", {v0: VERDICT_META()[keyCheck.result.verdict]?.label ?? keyCheck.result.verdict})}
               </Tag>
               <Typography.Text type="secondary">
                 {keyCheck.result.model} · {keyCheck.result.latency_ms} ms

@@ -32,6 +32,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.i18n import t
 from app.modules.common.models import AuditLog
 from app.modules.ops import service as ops_service
 from app.modules.ops.models import STATUS_ACTIVE, AdminApiKey, AdminUser
@@ -166,7 +167,7 @@ def _enforce_rate_limit(key_id: int) -> None:
     if int(used) > limit:
         raise HTTPException(
             status_code=429,
-            detail={"code": "rate_limited", "message": f"密钥超过 {limit} 次/分钟限制"},
+            detail={"code": "rate_limited", "message": t("apikey.rate_limited", limit=limit)},
             headers={"Retry-After": "60"},
         )
 
@@ -195,15 +196,15 @@ def resolve_credential(db: Session, credential: str) -> tuple[AdminUser, AdminAp
     prefix = credential[:KEY_PREFIX_LEN]
     key = db.scalar(select(AdminApiKey).where(AdminApiKey.key_prefix == prefix))
     if key is None or not hmac.compare_digest(key.key_hash, hash_secret(credential)):
-        raise _reject(401, "invalid_key", "API key 无效")
+        raise _reject(401, "invalid_key", t("apikey.invalid"))
     if key.status != STATUS_ACTIVE:
-        raise _reject(401, "key_revoked", "API key 已被撤销")
+        raise _reject(401, "key_revoked", t("apikey.revoked"))
     now = datetime.now(timezone.utc)
     if key.expires_at is not None and key.expires_at <= now:
-        raise _reject(401, "key_expired", "API key 已过期，请轮换")
+        raise _reject(401, "key_expired", t("apikey.expired"))
     user = db.get(AdminUser, key.admin_user_id)
     if user is None or user.status != STATUS_ACTIVE:
-        raise _reject(401, "account_disabled", "密钥绑定的账号已被禁用")
+        raise _reject(401, "account_disabled", t("auth.account_disabled"))
     _enforce_rate_limit(key.id)
     _touch(db, key)
     return user, key
@@ -213,7 +214,7 @@ def authorize(key: AdminApiKey, method: str, path: str, role: str | None = None)
     # A supplier credential is valid on exactly one surface. Fail here (before
     # any route-level role check) so the error is stable and greppable.
     if role == "partner" and not path.startswith("/partner/v1/"):
-        raise _reject(403, "partner_scope_denied", "上剧方密钥只能访问合作方接口")
+        raise _reject(403, "partner_scope_denied", t("auth.partner_scope_denied"))
     needed = scope_for_request(method, path)
     granted = granted_scopes(key, role)
     # `write` implies `upload` so keys created before the upload scope existed
@@ -221,7 +222,7 @@ def authorize(key: AdminApiKey, method: str, path: str, role: str | None = None)
     if needed == "upload" and "write" in granted:
         return
     if needed not in granted:
-        raise _reject(403, "scope_denied", f"该密钥缺少 {needed} 权限")
+        raise _reject(403, "scope_denied", t("apikey.scope_missing", scopes=needed))
 
 
 def authenticate(
@@ -252,7 +253,7 @@ def normalise_scopes(
     if not raw:
         raise HTTPException(
             status_code=422,
-            detail="至少选择一个权限；如需跟随账号角色请省略 scopes 字段",
+            detail=t("apikey.scope_required"),
         )
     pool = allowed or SCOPES
     unknown = [item for item in raw if item not in SCOPES]
@@ -260,12 +261,12 @@ def normalise_scopes(
     if unknown:
         raise HTTPException(
             status_code=422,
-            detail=f"unknown scope: {', '.join(unknown)}（可选 {', '.join(SCOPES)}）",
+            detail=t("apikey.unknown_scope", unknown=", ".join(unknown), choices=", ".join(SCOPES)),
         )
     if forbidden:
         raise HTTPException(
             status_code=422,
-            detail=f"该角色不能授予 scope: {', '.join(forbidden)}（可选 {', '.join(pool)}）",
+            detail=t("apikey.forbidden_scope", forbidden=", ".join(forbidden), choices=", ".join(pool)),
         )
     # dict.fromkeys keeps the caller's order while dropping duplicates.
     return list(dict.fromkeys(raw))
@@ -276,7 +277,7 @@ def _expiry(expires_in_days: int | None) -> datetime | None:
         return None
     if expires_in_days not in ALLOWED_TTL_DAYS:
         allowed = "/".join(str(day) for day in ALLOWED_TTL_DAYS)
-        raise HTTPException(status_code=422, detail=f"有效期只能是 {allowed} 天，或 null 表示长期")
+        raise HTTPException(status_code=422, detail=t("apikey.ttl_allowed", allowed=allowed))
     return datetime.now(timezone.utc) + timedelta(days=expires_in_days)
 
 
@@ -333,7 +334,7 @@ def _insert(
         db.rollback()
         raise HTTPException(
             status_code=409,
-            detail={"code": "key_name_conflict", "message": "该账号下已有同名密钥"},
+            detail={"code": "key_name_conflict", "message": t("apikey.name_conflict")},
         ) from exc
     return key, plaintext
 
@@ -354,7 +355,7 @@ def create_key(
     if user is None:
         raise HTTPException(status_code=404, detail="staff not found")
     if user.status != STATUS_ACTIVE:
-        raise HTTPException(status_code=422, detail="账号已禁用，无法签发密钥")
+        raise HTTPException(status_code=422, detail=t("apikey.account_disabled_issue"))
     key, plaintext = _insert(
         db,
         admin_user_id=admin_user_id,
@@ -382,7 +383,7 @@ def update_key(
     if key.status != STATUS_ACTIVE:
         raise HTTPException(
             status_code=409,
-            detail={"code": "key_revoked", "message": "已撤销的密钥不能再修改"},
+            detail={"code": "key_revoked", "message": t("apikey.revoked_no_edit")},
         )
     changed: dict[str, object] = {}
     if name is not None and name.strip() != key.name:
@@ -405,7 +406,7 @@ def update_key(
         db.rollback()
         raise HTTPException(
             status_code=409,
-            detail={"code": "key_name_conflict", "message": "该账号下已有同名密钥"},
+            detail={"code": "key_name_conflict", "message": t("apikey.name_conflict")},
         ) from exc
     _audit(db, actor_id, "api_key_update", key, {"changed": changed})
     db.commit()
@@ -439,7 +440,7 @@ def rotate_key(
     if key.status != STATUS_ACTIVE:
         raise HTTPException(
             status_code=409,
-            detail={"code": "key_revoked", "message": "已撤销的密钥不能轮换，请新建"},
+            detail={"code": "key_revoked", "message": t("apikey.revoked_no_rotate")},
         )
     key.status = "revoked"
     key.revoked_at = datetime.now(timezone.utc)
@@ -466,7 +467,7 @@ def delete_key(db: Session, key: AdminApiKey, *, actor_id: int | None) -> None:
             status_code=409,
             detail={
                 "code": "key_in_use",
-                "message": "密钥已被使用，是审计证据，请改为撤销",
+                "message": t("apikey.used_no_delete"),
             },
         )
     snapshot = {

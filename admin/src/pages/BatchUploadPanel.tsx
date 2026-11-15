@@ -24,12 +24,13 @@ import { CloudUploadOutlined, CloseOutlined } from "@ant-design/icons";
 import { MAX_CONCURRENT_UPLOADS, batchQueue, canEdit, useBatchQueue } from "./batchUpload";
 import type { BatchItem, TitleRule } from "./batchUpload";
 import { formatDuration, formatFileSize } from "./episodeUpload";
+import { t } from "../copy";
 
-const RULE_OPTIONS = [
+function RULE_OPTIONS(){ return [
   { value: "episode-en", label: "Episode {n}" },
-  { value: "episode-cn", label: "第 {n} 集" },
-  { value: "custom", label: "自定义…" },
-];
+  { value: "episode-cn", label: t("batchuploadpanel.episode_number_label") },
+  { value: "custom", label: t("batchuploadpanel.custom") },
+];; }
 
 function isActive(item: BatchItem): boolean {
   return item.status !== "done" && item.status !== "failed";
@@ -42,7 +43,7 @@ export function BatchUploadButton({ onClick, disabled = false }: { onClick: () =
   const active = items.filter(isActive).length;
   return (
     <Button icon={<CloudUploadOutlined />} disabled={disabled} onClick={onClick}>
-      批量上传{active > 0 ? `（${active}）` : ""}
+      {t("batchuploadpanel.batch_upload_tag")}{active > 0 ? `（${active}）` : ""}
     </Button>
   );
 }
@@ -50,12 +51,12 @@ export function BatchUploadButton({ onClick, disabled = false }: { onClick: () =
 /* -------------------------------- status cell ------------------------------- */
 
 function StatusCell({ item, queuedRank }: { item: BatchItem; queuedRank: number | null }) {
-  if (item.status === "probing") return <Tag>读取中…</Tag>;
+  if (item.status === "probing") return <Tag>{t("batchuploadpanel.reading")}</Tag>;
   if (item.status === "queued") {
     return (
       <Space size={6}>
-        <Tag style={{ marginRight: 0 }}>排队中</Tag>
-        {queuedRank === 1 && <span style={{ fontSize: 12, color: "#8c8c8c" }}>下一位</span>}
+        <Tag style={{ marginRight: 0 }}>{t("batchuploadpanel.queued")}</Tag>
+        {queuedRank === 1 && <span style={{ fontSize: 12, color: "#8c8c8c" }}>{t("batchuploadpanel.next_up")}</span>}
       </Space>
     );
   }
@@ -63,7 +64,7 @@ function StatusCell({ item, queuedRank }: { item: BatchItem; queuedRank: number 
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <Tag color="processing" style={{ marginRight: 0 }}>
-          上传中
+          {t("batchuploadpanel.uploading")}
         </Tag>
         <Progress percent={item.progress} size="small" showInfo={false} style={{ flex: 1, margin: 0 }} />
         <span style={{ fontSize: 12, color: "#8c8c8c", width: 34, textAlign: "right" }}>
@@ -76,11 +77,11 @@ function StatusCell({ item, queuedRank }: { item: BatchItem; queuedRank: number 
     return (
       <Space size={6}>
         <Tag color="orange" style={{ marginRight: 0 }}>
-          转码中
+          {t("episodespanel.transcoding")}
         </Tag>
         {item.overdue && (
-          <Tooltip title="Bunny 仍在处理，稍后可在列表点「同步状态」">
-            <span style={{ fontSize: 12, color: "#8c8c8c" }}>稍后同步</span>
+          <Tooltip title={t("batchuploadpanel.bunny_processing_tip")}>
+            <span style={{ fontSize: 12, color: "#8c8c8c" }}>{t("batchuploadpanel.sync_later")}</span>
           </Tooltip>
         )}
       </Space>
@@ -89,14 +90,14 @@ function StatusCell({ item, queuedRank }: { item: BatchItem; queuedRank: number 
   if (item.status === "done") {
     return (
       <Tag color="green" style={{ marginRight: 0 }}>
-        已完成
+        {t("batchuploadpanel.completed")}
       </Tag>
     );
   }
   return (
     <Tooltip title={item.error ?? undefined}>
       <Tag color="red" style={{ marginRight: 0 }}>
-        上传失败
+        {t("batchuploadpanel.upload_failed")}
       </Tag>
     </Tooltip>
   );
@@ -146,10 +147,10 @@ export function BatchUploadModal({
     if (fresh.length === 0) return;
     const res = batchQueue.addFiles({ dramaId, files: fresh, startNumber: startInput, rule: currentRule() });
     if (res.added > 0) setStartInput(res.nextNumber);
-    if (res.skippedDup > 0) message.info(`已跳过 ${res.skippedDup} 个重复文件（同名同大小已在队列中）`);
+    if (res.skippedDup > 0) message.info(t("batchuploadpanel.skipped_duplicates", {v0: res.skippedDup}));
     if (res.rejected.length > 0) {
       const preview = res.rejected.slice(0, 3).join("；");
-      message.error(`跳过 ${res.rejected.length} 个文件：${preview}${res.rejected.length > 3 ? "…" : ""}`);
+      message.error(t("batchuploadpanel.skipped_files", {v0: res.rejected.length, v1: preview, v2: res.rejected.length > 3 ? "…" : ""}));
     }
   };
 
@@ -157,7 +158,7 @@ export function BatchUploadModal({
     if (value == null || !Number.isFinite(value)) return;
     const actual = batchQueue.renumberFrom({ dramaId, start: value, rule: currentRule(), reserved: existingNumbers });
     setStartInput(actual);
-    if (actual !== value) message.info(`第 ${value} 集已被占用，队列从第 ${actual} 集开始`);
+    if (actual !== value) message.info(t("batchuploadpanel.episode_taken", {v0: value, v1: actual}));
   };
 
   const onRuleChange = (kind: string) => {
@@ -189,7 +190,7 @@ export function BatchUploadModal({
 
   const columns: TableColumnsType<BatchItem> = [
     {
-      title: "集",
+      title: t("common.episodes_unit"),
       width: 76,
       render: (_, item) =>
         canEdit(item) ? (
@@ -208,7 +209,7 @@ export function BatchUploadModal({
         ),
     },
     {
-      title: "视频文件",
+      title: t("batchuploadpanel.video_files"),
       ellipsis: true,
       render: (_, item) => (
         <div style={{ minWidth: 0 }}>
@@ -220,7 +221,7 @@ export function BatchUploadModal({
             {item.meta
               ? ` · ${formatDuration(item.meta.durationSeconds)}`
               : item.status === "probing"
-                ? " · 读取中…"
+                ? t("batchuploadpanel.reading_suffix")
                 : ""}
           </div>
           {item.status === "failed" && item.error && (
@@ -232,7 +233,7 @@ export function BatchUploadModal({
       ),
     },
     {
-      title: "标题",
+      title: t("common.title"),
       width: 200,
       render: (_, item) =>
         canEdit(item) ? (
@@ -249,25 +250,25 @@ export function BatchUploadModal({
         ),
     },
     {
-      title: "上传状态",
+      title: t("batchuploadpanel.upload_status"),
       width: 216,
       render: (_, item) => <StatusCell item={item} queuedRank={queueRank.get(item.uid) ?? null} />,
     },
     {
-      title: "操作",
+      title: t("common.actions"),
       width: 92,
       render: (_, item) => (
         <Space size={4}>
           {item.status === "failed" && (
             <Button type="link" size="small" style={{ padding: 0 }} onClick={() => batchQueue.retry(item.uid)}>
-              重试
+              {t("common.retry")}
             </Button>
           )}
           <Button
             type="text"
             size="small"
             icon={<CloseOutlined />}
-            aria-label="移除"
+            aria-label={t("homeops.remove")}
             onClick={() => batchQueue.remove(item.uid)}
           />
         </Space>
@@ -278,36 +279,36 @@ export function BatchUploadModal({
   const handleCollapse = () => {
     const active = mine.some(isActive);
     onClose();
-    if (active) message.info("已收起，上传将在后台继续（请勿刷新页面）");
+    if (active) message.info(t("batchuploadpanel.collapsed_background"));
   };
 
   return (
     <Modal
       open={open}
       width={880}
-      title="批量上传分集"
+      title={t("batchuploadpanel.batch_upload_episodes")}
       maskClosable={false}
       onCancel={handleCollapse}
       footer={
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <div style={{ fontSize: 12, color: "#595959" }}>
-            共 {stats.total} 个 · 上传中 <span style={{ color: "#185fa5", fontWeight: 500 }}>{stats.uploading} / {MAX_CONCURRENT_UPLOADS}</span>
-            {" · "}排队 {stats.queued}
-            {" · "}转码中 {stats.transcoding}
-            {" · "}已完成 {stats.done}
-            {" · "}失败 {stats.failed}
+            {t("batchuploadpanel.total_uploading", {v0: stats.total})}{" "}<span style={{ color: "#185fa5", fontWeight: 500 }}>{stats.uploading} / {MAX_CONCURRENT_UPLOADS}</span>
+            {" · "}{t("batchuploadpanel.queued_count", {v0: stats.queued})}
+            {" · "}{t("episodespanel.transcoding")} {stats.transcoding}
+            {" · "}{t("batchuploadpanel.completed")} {stats.done}
+            {" · "}{t("finance.filter_failed", {v0: stats.failed})}
           </div>
           <Space size={8}>
             <Button size="small" disabled={stats.done === 0} onClick={() => batchQueue.clearDone()}>
-              清空已完成
+              {t("batchuploadpanel.clear_completed")}
             </Button>
-            <Tooltip title={paused ? "继续启动排队中的文件" : "正在上传的 2 个会先传完，其余暂停启动"}>
+            <Tooltip title={paused ? t("batchuploadpanel.resume_queued_files") : t("batchuploadpanel.pause_after_current")}>
               <Button size="small" onClick={() => batchQueue.setPaused(!paused)}>
-                {paused ? "恢复队列" : "暂停队列"}
+                {paused ? t("batchuploadpanel.resume_queue") : t("batchuploadpanel.pause_queue")}
               </Button>
             </Tooltip>
             <Button size="small" type="primary" onClick={handleCollapse}>
-              收起 · 后台上传
+              {t("batchuploadpanel.collapse_background_upload")}
             </Button>
           </Space>
         </div>
@@ -318,8 +319,8 @@ export function BatchUploadModal({
           type="warning"
           showIcon
           style={{ marginBottom: 12 }}
-          message="上传期间请勿刷新或关闭此页面"
-          description="队列仅保存在当前页面：刷新后「排队中」的文件需要重新拖入；已进入 Bunny 转码的不受影响。"
+          message={t("batchuploadpanel.do_not_refresh")}
+          description={t("batchuploadpanel.queue_page_only")}
         />
       )}
 
@@ -334,14 +335,14 @@ export function BatchUploadModal({
       >
         <div className="ep-drop-inner">
           <CloudUploadOutlined className="ep-drop-icon" />
-          <div className="ep-drop-title">拖入视频，或点击选择 — 上传中也能继续追加</div>
-          <div className="ep-drop-hint">支持一次多选 · MP4 / MOV · 单个 ≤ 200MB</div>
+          <div className="ep-drop-title">{t("batchuploadpanel.drop_videos_hint")}</div>
+          <div className="ep-drop-hint">{t("batchuploadpanel.support_hint")}</div>
         </div>
       </Upload.Dragger>
 
       <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", margin: "12px 0 8px", fontSize: 13, color: "#595959" }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-          起始集数
+          {t("batchuploadpanel.start_episode")}
           <InputNumber
             size="small"
             min={1}
@@ -355,19 +356,19 @@ export function BatchUploadModal({
           />
         </span>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-          标题规则
-          <Select size="small" style={{ width: 130 }} value={ruleKind} options={RULE_OPTIONS} onChange={onRuleChange} />
+          {t("batchuploadpanel.title_rule")}
+          <Select size="small" style={{ width: 130 }} value={ruleKind} options={RULE_OPTIONS()} onChange={onRuleChange} />
         </span>
         {ruleKind === "custom" && (
           <Input
             size="small"
             style={{ width: 220 }}
-            placeholder="如：神秘短剧 第{n}集"
+            placeholder={t("batchuploadpanel.title_example")}
             value={customTpl}
             onChange={(event) => onCustomChange(event.target.value)}
           />
         )}
-        <span style={{ marginLeft: "auto", fontSize: 12, color: "#8c8c8c" }}>新文件自动接续编号 · 每行可手改</span>
+        <span style={{ marginLeft: "auto", fontSize: 12, color: "#8c8c8c" }}>{t("batchuploadpanel.auto_numbering")}</span>
       </div>
 
       <Table<BatchItem>
@@ -377,7 +378,7 @@ export function BatchUploadModal({
         dataSource={mine}
         columns={columns}
         scroll={{ y: 320 }}
-        locale={{ emptyText: "还没有文件：把视频拖到上面的区域，或点击选择（可一次多选）" }}
+        locale={{ emptyText: t("batchuploadpanel.empty_files") }}
       />
     </Modal>
   );
@@ -402,10 +403,10 @@ export function BatchUploadPill({
   const uploading = mine.filter((item) => item.status === "uploading").length;
   const queued = mine.filter((item) => item.status === "queued" || item.status === "probing").length;
   const transcoding = mine.filter((item) => item.status === "transcoding").length;
-  const parts = [`已完成 ${done}/${mine.length}`];
-  if (uploading > 0) parts.push(`上传中 ${uploading}/${MAX_CONCURRENT_UPLOADS}`);
-  if (queued > 0) parts.push(`排队 ${queued}`);
-  if (transcoding > 0) parts.push(`转码中 ${transcoding}`);
+  const parts = [t("batchuploadpanel.done_count", {v0: done, v1: mine.length})];
+  if (uploading > 0) parts.push(t("batchuploadpanel.uploading_count", {v0: uploading, v1: MAX_CONCURRENT_UPLOADS}));
+  if (queued > 0) parts.push(t("batchuploadpanel.queued_count", {v0: queued}));
+  if (transcoding > 0) parts.push(t("batchuploadpanel.transcoding_count", {v0: transcoding}));
 
   return (
     <div
@@ -425,12 +426,12 @@ export function BatchUploadPill({
       }}
     >
       <Tag color="processing" style={{ marginRight: 0 }}>
-        批量上传
+        {t("batchuploadpanel.batch_upload_tag")}
       </Tag>
       <span style={{ fontSize: 13 }}>{parts.join(" · ")}</span>
-      <span style={{ fontSize: 12, color: "#bfbfbf" }}>请勿刷新页面</span>
+      <span style={{ fontSize: 12, color: "#bfbfbf" }}>{t("batchuploadpanel.do_not_refresh_short")}</span>
       <Button size="small" type="primary" onClick={onOpen}>
-        打开
+        {t("batchuploadpanel.open")}
       </Button>
     </div>
   );

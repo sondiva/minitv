@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Form, Input, Modal, Typography, message } from "antd";
 import { api, clearToken, errorText } from "../api";
 import { useMe } from "../me";
+import { t } from "../copy";
 
 /**
  * Self-service password change for the signed-in staff account.
@@ -30,7 +31,7 @@ export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose:
         }),
       });
       clearToken();
-      message.success("密码已修改，请用新密码重新登录");
+      message.success(t("changepasswordmodal.password_changed_relogin"));
       window.location.href = "/login";
     } catch (e) {
       message.error(errorText(e));
@@ -42,9 +43,9 @@ export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose:
   return (
     <Modal
       open={open}
-      title="修改密码"
-      okText="保存并重新登录"
-      cancelText="取消"
+      title={t("app.change_password")}
+      okText={t("changepasswordmodal.save_and_relogin")}
+      cancelText={t("common.cancel")}
       onCancel={() => {
         form.resetFields();
         onClose();
@@ -55,32 +56,32 @@ export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose:
     >
       <Form form={form} layout="vertical" preserve={false}>
         <Form.Item
-          label="原密码"
+          label={t("changepasswordmodal.current_password")}
           name="old_password"
-          rules={[{ required: true, message: "请输入原密码" }]}
+          rules={[{ required: true, message: t("changepasswordmodal.enter_current_password") }]}
         >
           <Input.Password autoComplete="current-password" />
         </Form.Item>
         <Form.Item
-          label="新密码"
+          label={t("changepasswordmodal.new_password")}
           name="new_password"
           rules={[
-            { required: true, message: "请输入新密码" },
-            { min: 8, message: "新密码至少 8 位" },
+            { required: true, message: t("changepasswordmodal.enter_new_password") },
+            { min: 8, message: t("changepasswordmodal.new_password_min_length") },
           ]}
         >
-          <Input.Password autoComplete="new-password" placeholder="至少 8 位" />
+          <Input.Password autoComplete="new-password" placeholder={t("staff.password_min_length")} />
         </Form.Item>
         <Form.Item
-          label="确认新密码"
+          label={t("changepasswordmodal.confirm_new_password")}
           name="confirm"
           dependencies={["new_password"]}
           rules={[
-            { required: true, message: "请再次输入新密码" },
+            { required: true, message: t("changepasswordmodal.enter_new_password_again") },
             ({ getFieldValue }) => ({
               validator(_, value) {
                 if (!value || getFieldValue("new_password") === value) return Promise.resolve();
-                return Promise.reject(new Error("两次输入不一致"));
+                return Promise.reject(new Error(t("changepasswordmodal.passwords_mismatch")));
               },
             }),
           ]}
@@ -89,7 +90,7 @@ export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose:
         </Form.Item>
       </Form>
       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-        修改成功后，该账号所有已登录会话立即失效，需要用新密码重新登录。
+        {t("changepasswordmodal.sessions_expire_note")}
       </Typography.Text>
     </Modal>
   );

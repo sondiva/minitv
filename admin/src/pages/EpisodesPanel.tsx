@@ -41,6 +41,7 @@ import {
 import type { UploadSession, VideoMeta } from "./episodeUpload";
 import { batchQueue } from "./batchUpload";
 import { BatchUploadButton, BatchUploadModal, BatchUploadPill } from "./BatchUploadPanel";
+import { t } from "../copy";
 
 type EpisodeRow = {
   id: number;
@@ -51,14 +52,14 @@ type EpisodeRow = {
   bunny_video_id: string;
 };
 
-const STATUS_META: Record<string, { text: string; color: string }> = {
-  not_uploaded: { text: "未上传", color: "default" },
-  transcoding: { text: "转码中", color: "processing" },
-  transcode_failed: { text: "转码失败", color: "error" },
-  in_review: { text: "审核中", color: "orange" },
-  published: { text: "已上架", color: "green" },
-  unpublished: { text: "已下架", color: "red" },
-};
+function STATUS_META(): Record<string, { text: string; color: string }> { return {
+  not_uploaded: { text: t("episodespanel.not_uploaded"), color: "default" },
+  transcoding: { text: t("episodespanel.transcoding"), color: "processing" },
+  transcode_failed: { text: t("episodespanel.transcode_failed"), color: "error" },
+  in_review: { text: t("common.in_review"), color: "orange" },
+  published: { text: t("common.published"), color: "green" },
+  unpublished: { text: t("common.unpublished"), color: "red" },
+};; }
 
 /* ---------- video picker (shared by the create and edit dialogs) ---------- */
 
@@ -107,14 +108,14 @@ function useVideoPick(): VideoPick {
       setFileList([]);
       setFile(null);
       setProbing(false);
-      setError("只支持 MP4 / MOV 文件");
+      setError(t("episodespanel.only_mp4_mov"));
       return;
     }
     if (picked.size > MAX_UPLOAD_BYTES) {
       setFileList([]);
       setFile(null);
       setProbing(false);
-      setError(`文件 ${formatFileSize(picked.size)}，超过 200MB 上限`);
+      setError(t("episodespanel.file_over_limit", {v0: formatFileSize(picked.size)}));
       return;
     }
     probeSeq.current += 1;
@@ -183,12 +184,12 @@ function VideoFileCard({
   clearDisabled: boolean;
   progress: number | null;
 }) {
-  const name = pick.file?.name ?? "已选择的视频";
+  const name = pick.file?.name ?? t("episodespanel.selected_video");
   const detail = pick.meta
     ? `${pick.meta.width}×${pick.meta.height} · ${orientationLabel(pick.meta)} · ${formatDuration(pick.meta.durationSeconds)} · ${formatFileSize(pick.file?.size ?? 0)}`
     : pick.probing
-      ? "正在读取分辨率和时长…"
-      : "等待视频信息";
+      ? t("episodespanel.reading_resolution")
+      : t("episodespanel.waiting_video_info");
   return (
     <div className="ep-file">
       <div className="ep-video-mark" aria-hidden>
@@ -205,14 +206,14 @@ function VideoFileCard({
       </div>
       <div className="ep-file-actions">
         <Button type="link" size="small" className="ep-text-btn" icon={<PlayCircleOutlined />} onClick={onPreview}>
-          预览
+          {t("common.preview")}
         </Button>
         <Button
           type="text"
           size="small"
           icon={<CloseOutlined />}
           disabled={clearDisabled}
-          aria-label="移除视频"
+          aria-label={t("episodespanel.remove_video")}
           onClick={onClear}
         />
       </div>
@@ -299,10 +300,10 @@ function EpisodeEditorModal({
         open: true,
         kind: "embed",
         url: signed.embed_url ?? signed.url,
-        title: `预览 · 第 ${editing.episode_number} 集`,
+        title: t("drama.preview_episode", {v0: editing.episode_number}),
       });
     } catch (e) {
-      message.error(`预览失败：${errorText(e)}`);
+      message.error(t("stagepages.preview_failed", {v0: errorText(e)}));
     } finally {
       setPreviewing(false);
     }
@@ -313,7 +314,7 @@ function EpisodeEditorModal({
     if (previewBlobRef.current) URL.revokeObjectURL(previewBlobRef.current);
     const url = URL.createObjectURL(pick.file);
     previewBlobRef.current = url;
-    setPreview({ open: true, kind: "file", url, title: `预览 · ${pick.file.name}` });
+    setPreview({ open: true, kind: "file", url, title: t("episodespanel.preview_file", {v0: pick.file.name}) });
   };
 
   const clearPick = () => {
@@ -350,11 +351,11 @@ function EpisodeEditorModal({
     const values = await form.validateFields().catch(() => null);
     if (!values) return;
     if (isCreate && !(pick.file && pick.meta)) {
-      setError("请先选择要上传的视频文件");
+      setError(t("episodespanel.select_video_first"));
       return;
     }
     if (pick.file && !pick.meta) {
-      setError(pick.probing ? "正在读取视频信息，请稍候" : "视频信息无效，请重新选择文件");
+      setError(pick.probing ? t("episodespanel.reading_video_info") : t("episodespanel.invalid_video_info"));
       return;
     }
     setPhase("saving");
@@ -405,21 +406,21 @@ function EpisodeEditorModal({
         setPhase("transcoding");
         const finalStatus = await waitForTranscode(targetId);
         if (finalStatus === "transcode_failed") {
-          setError("Bunny 转码失败，请检查视频文件后重试");
+          setError(t("episodespanel.bunny_transcode_failed"));
           setPhase("idle");
           return;
         }
         if (finalStatus === "in_review") {
           message.success(
             isCreate
-              ? `第 ${values.episode_number} 集上传完成，已进入审核中`
-              : `第 ${values.episode_number} 集视频已替换；转码完成，需要重新上架`
+              ? t("episodespanel.episode_uploaded_review", {v0: values.episode_number})
+              : t("episodespanel.episode_replaced_republish", {v0: values.episode_number})
           );
         } else {
-          message.info("视频已上传，Bunny 仍在转码；稍后可在列表点「同步状态」");
+          message.info(t("episodespanel.uploaded_transcoding_sync"));
         }
       } else {
-        message.success("分集已更新");
+        message.success(t("episodespanel.episode_updated"));
       }
       onSaved();
       onClose();
@@ -450,18 +451,18 @@ function EpisodeEditorModal({
   };
 
   const primaryLabel = isCreate
-    ? "开始上传"
+    ? t("episodespanel.start_upload")
     : pick.file
       ? editing?.bunny_video_id
-        ? "保存并替换视频"
-        : "保存并上传视频"
-      : "保存";
+        ? t("episodespanel.save_replace_video")
+        : t("episodespanel.save_upload_video")
+      : t("common.save");
 
   // ``editing`` is the row from when the dialog opened. Once a replace starts,
   // that badge is stale — a previous 转码失败 must not stay on the title while
   // the new file is uploading or already at Bunny.
   const liveStatus = phase === "uploading" || phase === "transcoding" ? "transcoding" : editing?.status;
-  const statusMeta = liveStatus ? STATUS_META[liveStatus] ?? { text: liveStatus, color: "default" } : null;
+  const statusMeta = liveStatus ? STATUS_META()[liveStatus] ?? { text: liveStatus, color: "default" } : null;
   const hasVideo = Boolean(editing?.bunny_video_id);
   const showFile = Boolean(pick.file);
   const showDrop = canReplaceVideo && replacing && !showFile;
@@ -471,24 +472,24 @@ function EpisodeEditorModal({
 
   const infoSection = (
     <section className="ep-section">
-      <div className="ep-kicker">基本信息</div>
+      <div className="ep-kicker">{t("episodespanel.basic_info")}</div>
       <Form form={form} layout="vertical" disabled={busy}>
         <div className="ep-fields">
           <Form.Item
-            label="集数"
+            label={t("episodespanel.episode_count")}
             name="episode_number"
-            rules={[{ required: true, message: "请输入集数" }]}
+            rules={[{ required: true, message: t("episodespanel.enter_episode_count") }]}
             style={{ marginBottom: 0 }}
           >
             <InputNumber min={1} max={2000} style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item
-            label="标题"
+            label={t("common.title")}
             name="title"
-            rules={[{ required: true, message: "请输入标题" }]}
+            rules={[{ required: true, message: t("episodespanel.enter_title") }]}
             style={{ marginBottom: 0 }}
           >
-            <Input placeholder="这一集的标题" maxLength={200} />
+            <Input placeholder={t("episodespanel.episode_title_placeholder")} maxLength={200} />
           </Form.Item>
         </div>
       </Form>
@@ -499,22 +500,22 @@ function EpisodeEditorModal({
     <section className="ep-section">
       <div className="ep-section-head">
         <div className="ep-kicker">
-          视频
-          {isCreate && <span className="ep-req">必填</span>}
+          {t("episodespanel.video")}
+          {isCreate && <span className="ep-req">{t("episodespanel.required")}</span>}
         </div>
         {hasVideo && replacing && canReplaceVideo && phase === "idle" && (
           <Button type="link" size="small" className="ep-text-btn" onClick={stopReplacing}>
-            取消替换
+            {t("episodespanel.cancel_replace")}
           </Button>
         )}
       </div>
 
       {!canReplaceVideo && (
-        <div className="ep-note">转码进行中，完成前不能替换视频。标题和集数可以先保存。</div>
+        <div className="ep-note">{t("episodespanel.transcoding_no_replace")}</div>
       )}
 
       {editing?.status === "transcode_failed" && replacing && !showFile && (
-        <div className="ep-note">上次转码失败。重新选择视频并保存后会再次转码，完成后进入审核。</div>
+        <div className="ep-note">{t("episodespanel.last_transcode_failed")}</div>
       )}
 
       {showCurrent && (
@@ -523,20 +524,20 @@ function EpisodeEditorModal({
             <VideoCameraOutlined />
           </div>
           <div className="ep-video-copy">
-            <div className="ep-video-title">当前视频</div>
+            <div className="ep-video-title">{t("episodespanel.current_video")}</div>
             <div className="ep-video-sub">
-              {editing?.duration_seconds ? `时长 ${formatDuration(editing.duration_seconds)}` : "时长未知"}
+              {editing?.duration_seconds ? t("episodespanel.duration_value", {v0: formatDuration(editing.duration_seconds)}) : t("episodespanel.duration_unknown")}
             </div>
           </div>
           <div className="ep-video-actions">
             {canPreviewCurrent && (
               <Button icon={<PlayCircleOutlined />} loading={previewing} onClick={previewCurrent}>
-                预览
+                {t("common.preview")}
               </Button>
             )}
             {canReplaceVideo && (
               <Button disabled={busy} onClick={() => setReplacing(true)}>
-                替换视频
+                {t("episodespanel.replace_video")}
               </Button>
             )}
           </div>
@@ -547,11 +548,11 @@ function EpisodeEditorModal({
         <VideoDrop
           pick={pick}
           disabled={busy}
-          title={hasVideo ? "把新视频拖到这里，或点击选择" : "把视频拖到这里，或点击选择"}
+          title={hasVideo ? t("episodespanel.drop_new_video") : t("episodespanel.drop_video")}
           hint={
             hasVideo
-              ? "MP4、MOV · 不超过 200MB。保存后会重新转码，完成前不能播放"
-              : "MP4、MOV · 横版或竖版 · 不超过 200MB · 直传 Bunny"
+              ? t("episodespanel.mp4_mov_retranscode")
+              : t("episodespanel.mp4_mov_direct_bunny")
           }
         />
       )}
@@ -567,7 +568,7 @@ function EpisodeEditorModal({
       )}
 
       {pick.meta && hasVideo && phase === "idle" && (
-        <div className="ep-warn">保存后会立即重新转码，期间不能播放，完成后需要重新上架。</div>
+        <div className="ep-warn">{t("episodespanel.save_retranscode_warn")}</div>
       )}
 
       {pick.error && <div className="ep-error">{pick.error}</div>}
@@ -597,7 +598,7 @@ function EpisodeEditorModal({
         open={open}
         title={
           <span className="ep-title">
-            {editing ? `编辑第 ${editing.episode_number} 集` : "上传新分集"}
+            {editing ? t("episodespanel.edit_episode_number", {v0: editing.episode_number}) : t("episodespanel.upload_new_episode")}
             {statusMeta ? <Tag color={statusMeta.color}>{statusMeta.text}</Tag> : null}
           </span>
         }
@@ -611,14 +612,14 @@ function EpisodeEditorModal({
           <div className="ep-footer">
             {locked ? (
               <Button danger onClick={cancelUpload}>
-                取消上传
+                {t("episodespanel.cancel_upload")}
               </Button>
             ) : phase === "transcoding" ? (
-              <Button onClick={onClose}>关闭</Button>
+              <Button onClick={onClose}>{t("common.close")}</Button>
             ) : (
               <>
                 <Button onClick={onClose} disabled={phase === "saving"}>
-                  取消
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   type="primary"
@@ -640,8 +641,8 @@ function EpisodeEditorModal({
             <Alert
               type="info"
               showIcon
-              message="文件已上传，Bunny 正在转码"
-              description="转码完成后会自动进入审核中。列表里的旧状态可以先忽略，关闭后会刷新。"
+              message={t("episodespanel.file_uploaded_transcoding")}
+              description={t("episodespanel.transcode_auto_review")}
             />
           )}
           {error && <Alert type="error" showIcon message={error} />}
@@ -649,7 +650,7 @@ function EpisodeEditorModal({
       </Modal>
       <Modal
         open={preview.open}
-        title={preview.open ? preview.title : "预览"}
+        title={preview.open ? preview.title : t("common.preview")}
         width={720}
         footer={null}
         centered
@@ -710,7 +711,7 @@ export default function EpisodesPanel({ dramaId }: { dramaId: string }) {
       );
       setRows(res.items);
     } catch (e) {
-      message.error(`加载分集失败：${errorText(e)}`);
+      message.error(t("episodespanel.load_episodes_failed", {v0: errorText(e)}));
     } finally {
       setLoading(false);
     }
@@ -746,47 +747,47 @@ export default function EpisodesPanel({ dramaId }: { dramaId: string }) {
   const openPreview = async (row: EpisodeRow) => {
     try {
       const signed = await api<{ url: string; embed_url?: string }>(`/admin/v1/episodes/${row.id}/preview-url`);
-      setPreview({ open: true, url: signed.embed_url ?? signed.url, title: `预览 · 第 ${row.episode_number} 集` });
+      setPreview({ open: true, url: signed.embed_url ?? signed.url, title: t("drama.preview_episode", {v0: row.episode_number}) });
     } catch (e) {
-      message.error(`预览失败：${errorText(e)}`);
+      message.error(t("stagepages.preview_failed", {v0: errorText(e)}));
     }
   };
 
   const syncStatus = async (row: EpisodeRow) => {
     try {
       const res = await api<{ status: string }>(`/admin/v1/episodes/${row.id}/sync-status`, { method: "POST" });
-      const meta = STATUS_META[res.status];
-      message.success(`第 ${row.episode_number} 集状态：${meta?.text ?? res.status}`);
+      const meta = STATUS_META()[res.status];
+      message.success(t("episodespanel.episode_status", {v0: row.episode_number, v1: meta?.text ?? res.status}));
       load();
     } catch (e) {
-      message.error(`同步失败：${errorText(e)}`);
+      message.error(t("episodespanel.sync_failed", {v0: errorText(e)}));
     }
   };
 
   const publish = async (row: EpisodeRow) => {
     try {
       await api(`/admin/v1/episodes/${row.id}/publish`, { method: "POST" });
-      message.success(`第 ${row.episode_number} 集已上架`);
+      message.success(t("episodespanel.episode_published", {v0: row.episode_number}));
       load();
     } catch (e) {
-      message.error(`上架失败：${errorText(e)}`);
+      message.error(t("episodespanel.publish_failed", {v0: errorText(e)}));
     }
   };
 
   const unpublish = async (row: EpisodeRow) => {
     try {
       await api(`/admin/v1/episodes/${row.id}/unpublish`, { method: "POST" });
-      message.success(`第 ${row.episode_number} 集已下架`);
+      message.success(t("episodespanel.episode_unpublished", {v0: row.episode_number}));
       load();
     } catch (e) {
-      message.error(`下架失败：${errorText(e)}`);
+      message.error(t("episodespanel.unpublish_failed", {v0: errorText(e)}));
     }
   };
 
   const bulkStatus = async (action: "publish" | "unpublish") => {
     if (selectedKeys.length === 0) return;
     setBulkBusy(true);
-    const label = action === "publish" ? "上架" : "下架";
+    const label = action === "publish" ? t("episodespanel.publish") : t("drama.unpublish");
     try {
       const res = await api<{ updated: unknown[]; skipped: unknown[] }>(
         "/admin/v1/episodes/bulk-status",
@@ -797,12 +798,13 @@ export default function EpisodesPanel({ dramaId }: { dramaId: string }) {
       );
       const skipped = res.skipped.length;
       message.success(
-        `批量${label}完成：成功 ${res.updated.length} 集${skipped ? `，跳过 ${skipped} 集（状态不符或缺少视频）` : ""}`
+        t("episodespanel.batch_done", { v0: label, v1: res.updated.length }) +
+          (skipped ? t("episodespanel.batch_done_skipped", { v0: skipped }) : "")
       );
       setSelectedKeys([]);
       load();
     } catch (e) {
-      message.error(`批量${label}失败：${errorText(e)}`);
+      message.error(t("episodespanel.batch_failed", {v0: label, v1: errorText(e)}));
     } finally {
       setBulkBusy(false);
     }
@@ -817,32 +819,32 @@ export default function EpisodesPanel({ dramaId }: { dramaId: string }) {
             icon={<PlusOutlined />}
             onClick={() => openEditor(null)}
           >
-            上传新分集
+            {t("episodespanel.upload_new_episode")}
           </Button>
         )}
         {canWrite && <BatchUploadButton onClick={() => setBatchOpen(true)} />}
         <Select
           allowClear
-          placeholder="状态筛选"
+          placeholder={t("episodespanel.status_filter")}
           style={{ width: 160 }}
           value={status}
           onChange={(value) => setStatus(value)}
-          options={Object.entries(STATUS_META).map(([value, meta]) => ({ value, label: meta.text }))}
+          options={Object.entries(STATUS_META()).map(([value, meta]) => ({ value, label: meta.text }))}
         />
         <Button icon={<ReloadOutlined />} onClick={() => load()}>
-          刷新
+          {t("common.refresh")}
         </Button>
-        <Typography.Text type="secondary">共 {rows.length} 集</Typography.Text>
+        <Typography.Text type="secondary">{t("episodespanel.total_episodes", {v0: rows.length})}</Typography.Text>
         {selectedKeys.length > 0 && (
           <>
-            <Typography.Text>已选 {selectedKeys.length} 集</Typography.Text>
+            <Typography.Text>{t("episodespanel.selected_episodes", {v0: selectedKeys.length})}</Typography.Text>
             <Button
               type="primary"
               disabled={!canWrite}
               loading={bulkBusy}
               onClick={() => bulkStatus("publish")}
             >
-              批量上架
+              {t("episodespanel.batch_publish")}
             </Button>
             <Button
               danger
@@ -850,10 +852,10 @@ export default function EpisodesPanel({ dramaId }: { dramaId: string }) {
               loading={bulkBusy}
               onClick={() => bulkStatus("unpublish")}
             >
-              批量下架
+              {t("episodespanel.batch_unpublish")}
             </Button>
             <Button type="link" onClick={() => setSelectedKeys([])}>
-              取消选择
+              {t("episodespanel.cancel_selection")}
             </Button>
           </>
         )}
@@ -874,37 +876,37 @@ export default function EpisodesPanel({ dramaId }: { dramaId: string }) {
           }),
         }}
         columns={[
-          { title: "集", dataIndex: "episode_number", width: 70 },
+          { title: t("common.episodes_unit"), dataIndex: "episode_number", width: 70 },
           {
-            title: "标题",
+            title: t("common.title"),
             dataIndex: "title",
             ellipsis: true,
             render: (value: string) =>
-              value || <Typography.Text type="secondary">未命名</Typography.Text>,
+              value || <Typography.Text type="secondary">{t("episodespanel.unnamed")}</Typography.Text>,
           },
-          { title: "时长", dataIndex: "duration_seconds", width: 90, render: (value: number) => formatDuration(value) },
+          { title: t("episodespanel.duration"), dataIndex: "duration_seconds", width: 90, render: (value: number) => formatDuration(value) },
           {
-            title: "状态",
+            title: t("common.status"),
             dataIndex: "status",
             width: 110,
             render: (value: string) => {
-              const meta = STATUS_META[value] ?? { text: value, color: "default" };
+              const meta = STATUS_META()[value] ?? { text: value, color: "default" };
               return <Tag color={meta.color}>{meta.text}</Tag>;
             },
           },
           {
-            title: "操作",
+            title: t("common.actions"),
             width: 300,
             render: (_, row) => (
               <Space size={12} wrap>
                 {row.bunny_video_id && row.status !== "transcode_failed" && (
                   <Button size="small" type="link" style={{ padding: 0 }} onClick={() => openPreview(row)}>
-                    预览
+                    {t("common.preview")}
                   </Button>
                 )}
                 {row.status === "transcoding" && (
                   <Button size="small" type="link" style={{ padding: 0 }} icon={<SyncOutlined />} onClick={() => syncStatus(row)}>
-                    同步状态
+                    {t("episodespanel.sync_status")}
                   </Button>
                 )}
                 {canWrite && (!row.bunny_video_id || row.status === "transcode_failed") && (
@@ -915,32 +917,32 @@ export default function EpisodesPanel({ dramaId }: { dramaId: string }) {
                     style={row.status === "transcode_failed" ? { padding: 0 } : undefined}
                     onClick={() => openEditor(row)}
                   >
-                    {row.status === "transcode_failed" ? "重新上传" : "上传"}
+                    {row.status === "transcode_failed" ? t("episodespanel.reupload") : t("common.upload")}
                   </Button>
                 )}
                 {canWrite && (
                   <Button size="small" type="link" style={{ padding: 0 }} onClick={() => openEditor(row)}>
-                    编辑
+                    {t("common.edit")}
                   </Button>
                 )}
                 {row.status === "in_review" && canWrite && (
-                  <Popconfirm title={`上架第 ${row.episode_number} 集？`} onConfirm={() => publish(row)}>
+                  <Popconfirm title={t("episodespanel.confirm_publish_episode", {v0: row.episode_number})} onConfirm={() => publish(row)}>
                     <Button size="small" type="link" style={{ padding: 0 }}>
-                      上架
+                      {t("episodespanel.publish")}
                     </Button>
                   </Popconfirm>
                 )}
                 {row.status === "unpublished" && canWrite && (
-                  <Popconfirm title={`重新上架第 ${row.episode_number} 集？`} onConfirm={() => publish(row)}>
+                  <Popconfirm title={t("episodespanel.confirm_republish_episode", {v0: row.episode_number})} onConfirm={() => publish(row)}>
                     <Button size="small" type="link" style={{ padding: 0 }}>
-                      上架
+                      {t("episodespanel.publish")}
                     </Button>
                   </Popconfirm>
                 )}
                 {row.status === "published" && canWrite && (
-                  <Popconfirm title={`下架第 ${row.episode_number} 集？`} onConfirm={() => unpublish(row)}>
+                  <Popconfirm title={t("episodespanel.confirm_unpublish_episode", {v0: row.episode_number})} onConfirm={() => unpublish(row)}>
                     <Button size="small" type="link" danger style={{ padding: 0 }}>
-                      下架
+                      {t("drama.unpublish")}
                     </Button>
                   </Popconfirm>
                 )}

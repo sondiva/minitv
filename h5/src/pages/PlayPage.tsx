@@ -401,7 +401,7 @@ function PlaybackSettingsSheet({
       </header>
 
       <div className="settings-body">
-        {/* 倍速调节 */}
+        {/* Chỉnh tốc độ phát */}
         <div className="settings-group">
           <div className="group-title">
             <span className="group-icon"><IconSpeed size={18} /></span>
@@ -425,7 +425,7 @@ function PlaybackSettingsSheet({
           </div>
         </div>
 
-        {/* 分辨率/清晰度调节 */}
+        {/* Chỉnh độ phân giải */}
         <div className="settings-group">
           <div className="group-title">
             <span className="group-icon"><IconQuality size={18} /></span>

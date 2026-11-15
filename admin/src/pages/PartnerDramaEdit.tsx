@@ -39,6 +39,7 @@ import {
   probeVideo,
 } from "./episodeUpload";
 import { partnerStage, partnerStageColor } from "./partnerStage";
+import { t } from "../copy";
 
 type Episode = {
   id: number;
@@ -78,14 +79,14 @@ type Drama = {
   tag_ids: number[];
 };
 
-const EPISODE_STATUS: Record<string, { text: string; color?: string }> = {
-  not_uploaded: { text: "待上传" },
-  transcoding: { text: "转码中", color: "orange" },
-  transcode_failed: { text: "转码失败", color: "red" },
-  in_review: { text: "已就绪", color: "green" },
-  published: { text: "已上架", color: "green" },
-  unpublished: { text: "已下架" },
-};
+function EPISODE_STATUS(): Record<string, { text: string; color?: string }> { return {
+  not_uploaded: { text: t("partnerdramaedit.pending_upload") },
+  transcoding: { text: t("episodespanel.transcoding"), color: "orange" },
+  transcode_failed: { text: t("episodespanel.transcode_failed"), color: "red" },
+  in_review: { text: t("partnerdramaedit.ready"), color: "green" },
+  published: { text: t("common.published"), color: "green" },
+  unpublished: { text: t("common.unpublished") },
+};; }
 
 const COVER_W = 168;
 const COVER_H = 224;
@@ -168,7 +169,7 @@ export default function PartnerDramaEdit() {
         }),
       });
       setDirty(false);
-      if (!silent) message.success("已保存");
+      if (!silent) message.success(t("common.saved"));
       await reload();
       return true;
     } catch (e) {
@@ -183,7 +184,7 @@ export default function PartnerDramaEdit() {
     if (!drama) return;
     const free = Number(form.getFieldValue("free_episode_count") ?? 0);
     if (drama.episode_count > 0 && free > drama.episode_count) {
-      message.error(`免费集数不能超过总集数（当前 ${drama.episode_count} 集），请改小并保存`);
+      message.error(t("partnerdramaedit.free_exceeds_total", {v0: drama.episode_count}));
       return;
     }
     if (dirty) {
@@ -191,14 +192,14 @@ export default function PartnerDramaEdit() {
       if (!ok) return;
     }
     Modal.confirm({
-      title: "提交审核",
-      content: "提交后不可修改，需等 MiniTV 运营审核。确认提交？",
-      okText: "提交",
+      title: t("drama.submit_review"),
+      content: t("partnerdramaedit.submit_locked_confirm"),
+      okText: t("partnerdramaedit.submit"),
       onOk: async () => {
         setSubmitting(true);
         try {
           await api(`/partner/v1/dramas/${drama.id}/submit`, { method: "POST" });
-          message.success("已提交，等待审核");
+          message.success(t("partnerdramaedit.submitted_waiting"));
           await reload();
         } catch (e) {
           message.error(errorText(e));
@@ -213,14 +214,14 @@ export default function PartnerDramaEdit() {
   const removeDrama = () => {
     if (!drama) return;
     Modal.confirm({
-      title: `删除《${drama.title}》？`,
-      content: "只有草稿且未上传视频的剧集可以删除，删除后不可恢复。",
-      okText: "删除",
+      title: t("partnerdramaedit.delete_drama_confirm", {v0: drama.title}),
+      content: t("partnerdramaedit.delete_draft_only"),
+      okText: t("common.delete"),
       okButtonProps: { danger: true },
       onOk: async () => {
         try {
           await api(`/partner/v1/dramas/${drama.id}`, { method: "DELETE" });
-          message.success("已删除");
+          message.success(t("common.deleted"));
           navigate("/partner/dramas");
         } catch (e) {
           message.error(errorText(e));
@@ -233,7 +234,7 @@ export default function PartnerDramaEdit() {
   const uploadCover = async (file: File) => {
     if (!drama) return;
     if (file.size > 5 * 1024 * 1024) {
-      message.error("封面不能超过 5MB");
+      message.error(t("partnerdramaedit.cover_over_5mb"));
       return;
     }
     const body = new FormData();
@@ -241,7 +242,7 @@ export default function PartnerDramaEdit() {
     setCoverBusy(true);
     try {
       await api(`/partner/v1/dramas/${drama.id}/cover`, { method: "POST", body });
-      message.success("封面已更新");
+      message.success(t("partnerdramaedit.cover_updated"));
       await reload();
     } catch (e) {
       message.error(errorText(e));
@@ -276,10 +277,10 @@ export default function PartnerDramaEdit() {
       setPreview({
         open: true,
         url: signed.embed_url ?? signed.url,
-        title: `预览 · 第 ${episode.episode_number} 集`,
+        title: t("drama.preview_episode", {v0: episode.episode_number}),
       });
     } catch (e) {
-      message.error(`预览失败：${errorText(e)}`);
+      message.error(t("stagepages.preview_failed", {v0: errorText(e)}));
     }
   };
 
@@ -308,9 +309,9 @@ export default function PartnerDramaEdit() {
 
   const removeEpisode = (episode: Episode) => {
     Modal.confirm({
-      title: `删除第 ${episode.episode_number} 集？`,
-      content: "只有未上传视频的分集可以删除，删除后不可恢复。",
-      okText: "删除",
+      title: t("partnerdramaedit.delete_episode_confirm", {v0: episode.episode_number}),
+      content: t("partnerdramaedit.delete_episode_only"),
+      okText: t("common.delete"),
       okButtonProps: { danger: true },
       onOk: async () => {
         try {
@@ -350,7 +351,7 @@ export default function PartnerDramaEdit() {
     const episodeId = uploadTarget.current;
     if (!file || !episodeId || !drama) return;
     if (file.size > MAX_UPLOAD_BYTES) {
-      message.error("单个视频不能超过 200MB");
+      message.error(t("partnerdramaedit.single_video_limit"));
       return;
     }
     setUploadingId(episodeId);
@@ -372,11 +373,11 @@ export default function PartnerDramaEdit() {
         }
       );
       await directUpload(session, file, setProgress, () => undefined);
-      message.info("上传完成，等待转码…");
+      message.info(t("partnerdramaedit.uploaded_waiting_transcode"));
       const final = await pollStatus(episodeId);
-      if (final === "transcode_failed") message.error("转码失败，请换文件重试");
-      else if (final === "in_review") message.success("该集已就绪，可以提交审核");
-      else message.info("Bunny 仍在转码，稍后刷新查看");
+      if (final === "transcode_failed") message.error(t("partnerdramaedit.transcode_failed_retry"));
+      else if (final === "in_review") message.success(t("partnerdramaedit.episode_ready_submit"));
+      else message.info(t("partnerdramaedit.bunny_transcoding_refresh"));
       await reload();
     } catch (e) {
       // Release the session server-side: create_upload_session already moved
@@ -401,8 +402,8 @@ export default function PartnerDramaEdit() {
         `/partner/v1/episodes/${episode.id}/upload-failed`,
         { method: "POST" }
       );
-      if (res.updated === false) message.info("文件其实已经传完，等待转码即可");
-      else message.success("已取消，可以重新上传");
+      if (res.updated === false) message.info(t("partnerdramaedit.file_already_uploaded"));
+      else message.success(t("partnerdramaedit.cancelled_reupload"));
       await reload();
     } catch (e) {
       message.error(errorText(e));
@@ -410,28 +411,28 @@ export default function PartnerDramaEdit() {
   };
 
   if (loading && !drama) return <Card loading />;
-  if (!drama) return <Alert type="error" message="剧集不存在或无权访问" />;
+  if (!drama) return <Alert type="error" message={t("partnerdramaedit.drama_not_found")} />;
 
   const readyEpisodes = drama.episodes.filter((item) => item.status === "in_review").length;
   const steps = [
     {
-      title: "基本信息",
-      desc: "封面 + 简介 ≥30 字",
+      title: t("episodespanel.basic_info"),
+      desc: t("partnerdramaedit.cover_synopsis_chars"),
       done: Boolean(coverUrl) && (drama.synopsis || "").trim().length >= 30,
     },
     {
-      title: "分集",
-      desc: `至少 1 集且全部转码完成（${readyEpisodes}/${drama.episode_count}）`,
+      title: t("drama.episodes"),
+      desc: t("partnerdramaedit.at_least_one_ready", {v0: readyEpisodes, v1: drama.episode_count}),
       done: drama.episode_count > 0 && drama.episodes.every((e) => e.status === "in_review"),
     },
     {
-      title: "提交审核",
-      desc: drama.review_state === "pending" ? "运营审核中" : "等待提交",
+      title: t("drama.submit_review"),
+      desc: drama.review_state === "pending" ? t("partnerdramaedit.ops_reviewing") : t("partnerdramaedit.waiting_submit"),
       done: ["pending", "approved", "rejected"].includes(drama.review_state),
     },
     {
-      title: "上架",
-      desc: drama.status === "published" ? "已上架" : "运营安排",
+      title: t("episodespanel.publish"),
+      desc: drama.status === "published" ? t("common.published") : t("partnerdramaedit.ops_arrange"),
       done: drama.status === "published",
     },
   ];
@@ -448,7 +449,7 @@ export default function PartnerDramaEdit() {
         <Row gutter={[40, 24]}>
           <Col xs={24} md={8} lg={7}>
             <Space direction="vertical" size={12} style={{ width: "100%" }}>
-              <Typography.Text strong>封面</Typography.Text>
+              <Typography.Text strong>{t("partnerdramaedit.cover")}</Typography.Text>
               <div style={{ width: COVER_W, maxWidth: "100%" }}>
                 <div
                   style={{
@@ -467,11 +468,11 @@ export default function PartnerDramaEdit() {
                   {coverUrl ? (
                     <img
                       src={coverUrl}
-                      alt="封面预览"
+                      alt={t("partnerdramaedit.cover_preview")}
                       style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                     />
                   ) : (
-                    <Typography.Text type="secondary">暂无封面</Typography.Text>
+                    <Typography.Text type="secondary">{t("partnerdramaedit.no_cover")}</Typography.Text>
                   )}
                 </div>
                 <Button
@@ -482,13 +483,13 @@ export default function PartnerDramaEdit() {
                   disabled={!drama.editable}
                   onClick={() => document.getElementById("partner-cover-input")?.click()}
                 >
-                  {coverUrl ? "替换封面" : "上传封面"}
+                  {coverUrl ? t("partnerdramaedit.replace_cover") : t("partnerdramaedit.upload_cover")}
                 </Button>
                 <Typography.Paragraph
                   type="secondary"
                   style={{ fontSize: 12, marginTop: 12, marginBottom: 0 }}
                 >
-                  支持 JPG / PNG / WebP，≤5MB，建议 3:4 竖版（如 720×960）。
+                  {t("partnerdramaedit.cover_format_hint")}
                 </Typography.Paragraph>
               </div>
             </Space>
@@ -507,38 +508,38 @@ export default function PartnerDramaEdit() {
 
           <Col xs={24} md={16} lg={17}>
             <Form.Item
-              label="剧名"
+              label={t("common.drama_name")}
               name="title"
-              rules={[{ required: true, message: "剧名必填" }]}
+              rules={[{ required: true, message: t("partnerdramaedit.drama_name_required") }]}
               style={{ maxWidth: 480 }}
             >
               <Input maxLength={200} showCount disabled={!drama.editable} />
             </Form.Item>
-            <Form.Item label="简介" name="synopsis">
+            <Form.Item label={t("drama.synopsis")} name="synopsis">
               <Input.TextArea
                 rows={6}
                 maxLength={5000}
                 showCount
                 disabled={!drama.editable}
-                placeholder="提交审核前至少 30 字"
+                placeholder={t("partnerdramaedit.synopsis_min_chars")}
               />
             </Form.Item>
-            <Form.Item label="标签" name="tag_ids" style={{ maxWidth: 640 }}>
+            <Form.Item label={t("partnerdramaedit.tags")} name="tag_ids" style={{ maxWidth: 640 }}>
               <Select
                 mode="multiple"
                 allowClear
                 disabled={!drama.editable}
                 options={tagOptions}
-                placeholder="从平台标签库选择"
+                placeholder={t("partnerdramaedit.select_from_tag_library")}
                 optionFilterProp="label"
               />
             </Form.Item>
             <Row gutter={24} style={{ maxWidth: 640 }}>
               <Col span={12}>
                 <Form.Item
-                  label="免费集数"
+                  label={t("partnerdramaedit.free_episodes")}
                   name="free_episode_count"
-                  extra={`最少 ${floor} 集 · 最多 ${drama.episode_count || 5} 集`}
+                  extra={t("partnerdramaedit.free_episode_range", {v0: floor, v1: drama.episode_count || 5})}
                 >
                   <InputNumber
                     min={0}
@@ -549,8 +550,8 @@ export default function PartnerDramaEdit() {
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item label="单集金币" extra="平台定价，供应商不可修改">
-                  <Input value={`${drama.coin_price_per_episode} 金币`} disabled />
+                <Form.Item label={t("partnerdramaedit.coins_per_episode")} extra={t("partnerdramaedit.platform_pricing")}>
+                  <Input value={t("partnerdramaedit.coins_value", {v0: drama.coin_price_per_episode})} disabled />
                 </Form.Item>
               </Col>
             </Row>
@@ -562,16 +563,16 @@ export default function PartnerDramaEdit() {
                   loading={saving}
                   onClick={() => save()}
                 >
-                  保存
+                  {t("common.save")}
                 </Button>
                 <Button
                   icon={<ReloadOutlined />}
                   disabled={!dirty || saving}
                   onClick={() => reload()}
                 >
-                  重置
+                  {t("partnerdramaedit.reset")}
                 </Button>
-                {dirty && <Typography.Text type="warning">有未保存的修改</Typography.Text>}
+                {dirty && <Typography.Text type="warning">{t("partnerdramaedit.unsaved_changes")}</Typography.Text>}
               </Space>
             )}
           </Col>
@@ -583,10 +584,10 @@ export default function PartnerDramaEdit() {
   const episodesTab = (
     <Card
       styles={{ body: { padding: 24 } }}
-      title={`分集（${drama.episode_count}）`}
+      title={t("partnerdramaedit.episodes_count_title", {v0: drama.episode_count})}
       extra={
         <Button disabled={!drama.editable} onClick={() => setEpisodeOpen(true)}>
-          + 添加分集
+          {t("partnerdramaedit.add_episode")}
         </Button>
       }
     >
@@ -595,37 +596,37 @@ export default function PartnerDramaEdit() {
         size="middle"
         pagination={false}
         dataSource={drama.episodes}
-        locale={{ emptyText: "还没有分集，先添加一集再上传视频" }}
+        locale={{ emptyText: t("partnerdramaedit.no_episodes_hint") }}
         columns={[
-          { title: "集", dataIndex: "episode_number", width: 70 },
-          { title: "标题", dataIndex: "title" },
+          { title: t("common.episodes_unit"), dataIndex: "episode_number", width: 70 },
+          { title: t("common.title"), dataIndex: "title" },
           {
-            title: "状态",
+            title: t("common.status"),
             key: "status",
             width: 120,
             render: (_, row) => {
-              if (uploadingId === row.id) return <Tag color="blue">上传中 {progress}%</Tag>;
+              if (uploadingId === row.id) return <Tag color="blue">{t("batchuploadpanel.uploading")} {progress}%</Tag>;
               if (row.status === "transcoding" && row.upload_status === "created") {
-                return <Tag color="blue">等待上传完成</Tag>;
+                return <Tag color="blue">{t("partnerdramaedit.waiting_upload_done")}</Tag>;
               }
-              const meta = EPISODE_STATUS[row.status] ?? { text: row.status };
+              const meta = EPISODE_STATUS()[row.status] ?? { text: row.status };
               return <Tag color={meta.color}>{meta.text}</Tag>;
             },
           },
           {
-            title: "时长",
+            title: t("episodespanel.duration"),
             dataIndex: "duration_seconds",
             width: 80,
             render: (value: number) => formatDuration(value),
           },
           {
-            title: "大小",
+            title: t("partnerdramaedit.size"),
             dataIndex: "size_bytes",
             width: 90,
             render: (value: number) => (value ? formatFileSize(value) : "-"),
           },
           {
-            title: "操作",
+            title: t("common.actions"),
             key: "actions",
             width: 230,
             render: (_, row) => (
@@ -636,7 +637,7 @@ export default function PartnerDramaEdit() {
                   disabled={!row.has_video}
                   onClick={() => openPreview(row)}
                 >
-                  预览
+                  {t("common.preview")}
                 </Button>
                 <Button
                   type="link"
@@ -644,7 +645,7 @@ export default function PartnerDramaEdit() {
                   disabled={!drama.editable || uploadingId !== null}
                   onClick={() => pickFile(row)}
                 >
-                  {row.status === "not_uploaded" ? "上传" : "替换"}
+                  {row.status === "not_uploaded" ? t("common.upload") : t("partnerdramaedit.replace")}
                 </Button>
                 {row.status === "transcoding" && row.upload_status === "created" && (
                   <Button
@@ -654,7 +655,7 @@ export default function PartnerDramaEdit() {
                     disabled={uploadingId !== null}
                     onClick={() => cancelUpload(row)}
                   >
-                    取消上传
+                    {t("episodespanel.cancel_upload")}
                   </Button>
                 )}
                 <Button
@@ -663,11 +664,11 @@ export default function PartnerDramaEdit() {
                   disabled={!drama.editable}
                   onClick={() => openEdit(row)}
                 >
-                  编辑
+                  {t("common.edit")}
                 </Button>
                 {row.status === "not_uploaded" && (
                   <Button type="link" size="small" danger onClick={() => removeEpisode(row)}>
-                    删除
+                    {t("common.delete")}
                   </Button>
                 )}
               </Space>
@@ -696,7 +697,7 @@ export default function PartnerDramaEdit() {
       <Card styles={{ body: { padding: "16px 24px" } }}>
         <Space wrap size="middle">
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/partner/dramas")}>
-            返回列表
+            {t("partnerdramaedit.back_to_list")}
           </Button>
           <Divider type="vertical" style={{ height: 24 }} />
           <Typography.Title level={4} style={{ margin: 0 }}>
@@ -704,22 +705,22 @@ export default function PartnerDramaEdit() {
           </Typography.Title>
           {stageTag}
           <Typography.Text type="secondary">
-            ID #{drama.id} · {drama.episode_count} 集
+            ID #{drama.id} · {drama.episode_count} {t("common.episodes_unit")}
           </Typography.Text>
           <span style={{ flex: 1 }} />
           {drama.editable && (
             <Button danger icon={<DeleteOutlined />} onClick={removeDrama}>
-              删除草稿
+              {t("partnerdramaedit.delete_draft")}
             </Button>
           )}
           <Button onClick={submit} loading={submitting} disabled={!drama.editable}>
-            提交审核
+            {t("drama.submit_review")}
           </Button>
         </Space>
       </Card>
 
       {drama.review_note && (
-        <Alert type="error" showIcon message={`驳回原因：${drama.review_note}`} />
+        <Alert type="error" showIcon message={t("partnerdramaedit.reject_reason", {v0: drama.review_note})} />
       )}
       {!drama.editable && (
         <Alert
@@ -727,8 +728,8 @@ export default function PartnerDramaEdit() {
           showIcon
           message={
             drama.review_state === "pending"
-              ? "已提交审核，审核期间不可修改。"
-              : "审核通过或已上架后内容锁定，如需调整请联系运营。"
+              ? t("partnerdramaedit.submitted_locked")
+              : t("partnerdramaedit.locked_after_approval")
           }
         />
       )}
@@ -736,7 +737,7 @@ export default function PartnerDramaEdit() {
       {drama.status !== "published" && (
         <Card
           size="small"
-          title="上架流程"
+          title={t("partnerdramaedit.publish_flow")}
           extra={
             nextStepIndex >= 0 ? (
               <Button
@@ -744,7 +745,7 @@ export default function PartnerDramaEdit() {
                 style={{ paddingInline: 0 }}
                 onClick={() => setActiveTab(nextStepIndex === 1 ? "episodes" : "info")}
               >
-                去完成：{steps[nextStepIndex].title} →
+                {t("drama.complete_next_step", {v0: steps[nextStepIndex].title})}
               </Button>
             ) : null
           }
@@ -765,46 +766,46 @@ export default function PartnerDramaEdit() {
         activeKey={activeTab}
         onChange={setActiveTab}
         items={[
-          { key: "info", label: "基本信息", children: infoTab },
-          { key: "episodes", label: "分集", children: episodesTab },
+          { key: "info", label: t("episodespanel.basic_info"), children: infoTab },
+          { key: "episodes", label: t("drama.episodes"), children: episodesTab },
         ]}
       />
 
       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-        提交前需：封面已上传、简介 ≥30 字、所有分集转码完成、免费集数不少于 {floor} 集。
+        {t("partnerdrama.submit_requirements", {v0: floor})}
       </Typography.Text>
 
       <Modal
-        title="添加分集"
+        title={t("partnerdramaedit.add_episode_btn")}
         open={episodeOpen}
         onCancel={() => setEpisodeOpen(false)}
         onOk={() => episodeForm.submit()}
-        okText="添加"
+        okText={t("partnerdramaedit.add")}
         forceRender
       >
         <Form form={episodeForm} layout="vertical" onFinish={addEpisode} preserve={false}>
-          <Form.Item label="集号" name="episode_number" extra="留空自动 +1">
+          <Form.Item label={t("partnerdramaedit.episode_number")} name="episode_number" extra={t("partnerdramaedit.blank_auto_increment")}>
             <InputNumber min={1} max={300} style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item label="标题" name="title" extra="留空自动生成「第 N 集」">
+          <Form.Item label={t("common.title")} name="title" extra={t("partnerdramaedit.blank_auto_title")}>
             <Input maxLength={200} />
           </Form.Item>
         </Form>
       </Modal>
 
       <Modal
-        title={editing ? `编辑第 ${editing.episode_number} 集` : "编辑分集"}
+        title={editing ? t("episodespanel.edit_episode_number", {v0: editing.episode_number}) : t("partnerdramaedit.edit_episode")}
         open={editOpen}
         onCancel={() => setEditOpen(false)}
         onOk={() => editForm.submit()}
-        okText="保存"
+        okText={t("common.save")}
         forceRender
       >
         <Form form={editForm} layout="vertical" onFinish={saveEpisode} preserve={false}>
-          <Form.Item label="集号" name="episode_number" rules={[{ required: true }]}>
+          <Form.Item label={t("partnerdramaedit.episode_number")} name="episode_number" rules={[{ required: true }]}>
             <InputNumber min={1} max={300} style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item label="标题" name="title" rules={[{ required: true, message: "请输入标题" }]}>
+          <Form.Item label={t("common.title")} name="title" rules={[{ required: true, message: t("episodespanel.enter_title") }]}>
             <Input maxLength={200} />
           </Form.Item>
         </Form>

@@ -12,6 +12,8 @@ import redis
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.i18n import parse_accept_language, reset_lang, set_lang
+
 ROOT = Path(__file__).resolve().parents[2]
 logger = logging.getLogger("minitv.api")
 
@@ -101,6 +103,22 @@ def _register_routers() -> None:
 
 
 _register_routers()
+
+
+@app.middleware("http")
+async def locale_middleware(request: Request, call_next):
+    """Pin the request language from ``Accept-Language`` for :mod:`app.i18n`.
+
+    ``vi`` (any ``vi``/``vi-VN`` tag) selects Vietnamese; anything else keeps
+    the ``zh`` default, so existing clients see byte-identical messages.
+    The contextvar is reset after the request so background work keeps the
+    default.
+    """
+    token = set_lang(parse_accept_language(request.headers.get("Accept-Language")))
+    try:
+        return await call_next(request)
+    finally:
+        reset_lang(token)
 
 
 @app.middleware("http")

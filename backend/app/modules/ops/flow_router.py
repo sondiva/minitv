@@ -15,6 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db import get_db, get_engine, make_session_factory
+from app.i18n import t
 from app.modules.account.models import User
 from app.modules.account.service import (
     AccountError,
@@ -313,7 +314,7 @@ def create_episode(drama_id: int, body: EpisodeIn, db: Session = Depends(get_db)
     if duplicate is not None:
         raise HTTPException(
             status_code=409,
-            detail=f"第 {body.episode_number} 集已存在，请换一个集数",
+            detail=t("drama.episode_exists_change", number=body.episode_number),
         )
     title = (body.title or f"Episode {body.episode_number}").strip() or f"Episode {body.episode_number}"
     row = Episode(drama_id=drama_id, episode_number=body.episode_number, title=title[:200])
@@ -478,7 +479,7 @@ def _remote_upload_stalled(remote: dict) -> bool:
     - status 0 with no bytes accounted for — the upload died in transit and
       the original never made it to storage (CDN ``/{guid}/original`` 404s).
     - status 1/2 with zero encode progress and no resolutions — Bunny has
-      the original but the encoder never picked it up (sits 转码中 forever).
+      the original but the encoder never picked it up (sits in "transcoding" forever).
 
     Either way the row must fall to ``transcode_failed`` so the retry path
     (closed while transcoding) re-opens; without that the episode can never
@@ -685,14 +686,14 @@ def episode_upload_headers(
             status_code=409,
             detail={
                 "code": "upload_not_resumable",
-                "message": f"分集当前是 {episode.status}，只有 transcoding 状态可以续传",
+                "message": t("episode.current_not_transcoding", status=episode.status),
             },
         )
     upload = _latest_media_upload(db, episode.id, episode.bunny_video_id)
     if upload is None or upload.status != "created" or not episode.bunny_video_id:
         raise HTTPException(
             status_code=409,
-            detail={"code": "upload_not_resumable", "message": "没有可续传的上传会话"},
+            detail={"code": "upload_not_resumable", "message": t("episode.no_resumable")},
         )
     if bunny.live():
         return {
@@ -776,7 +777,7 @@ def upload_failed(
             "updated": False,
             "reason": payload.reason,
         }
-    # A browser error after the bytes have landed must not stamp 转码失败 onto
+    # A browser error after the bytes have landed must not stamp "transcode_failed" onto
     # a video Bunny has already accepted. Status 0 with no original means the
     # object was created and nothing arrived — that one stays retryable.
     video_id = payload.video_id or episode.bunny_video_id
@@ -916,7 +917,7 @@ def delete_episode(
             status_code=409,
             detail={
                 "code": "episode_not_empty",
-                "message": f"第 {episode.episode_number} 集是 {episode.status}，只有空壳可以删；请先下架",
+                "message": t("episode.only_shell_delete", number=episode.episode_number, status=episode.status),
             },
         )
     bump_generation(episode.id)
@@ -953,11 +954,11 @@ def update_episode(
     if episode is None:
         raise HTTPException(status_code=404, detail="episode not found")
     if body.title is None and body.episode_number is None:
-        raise HTTPException(status_code=422, detail="没有需要更新的字段")
+        raise HTTPException(status_code=422, detail=t("episode.no_fields"))
     if body.title is not None:
         title = body.title.strip()
         if not title:
-            raise HTTPException(status_code=422, detail="标题不能为空")
+            raise HTTPException(status_code=422, detail=t("episode.title_required"))
         episode.title = title
     if body.episode_number is not None and body.episode_number != episode.episode_number:
         duplicate = db.scalar(
@@ -970,7 +971,7 @@ def update_episode(
         if duplicate is not None:
             raise HTTPException(
                 status_code=409,
-                detail=f"第 {body.episode_number} 集已存在，请换一个集数",
+                detail=t("drama.episode_exists_change", number=body.episode_number),
             )
         episode.episode_number = body.episode_number
     try:
@@ -980,7 +981,7 @@ def update_episode(
         db.rollback()
         raise HTTPException(
             status_code=409,
-            detail=f"第 {body.episode_number} 集已存在，请换一个集数",
+            detail=t("drama.episode_exists_change", number=body.episode_number),
         ) from None
     return {
         "id": episode.id,
@@ -1115,18 +1116,18 @@ async def upload_cover(
 ):
     drama = _drama_or_404(db, drama_id)
     if not bunny.live():
-        raise HTTPException(status_code=503, detail="图片存储未配置，可先填写封面链接")
+        raise HTTPException(status_code=503, detail=t("cover.storage_unconfigured"))
     data = await file.read(COVER_MAX_BYTES + 1)
     if not data or len(data) > COVER_MAX_BYTES:
-        raise HTTPException(status_code=422, detail="封面大小需在 1 字节到 5MB 之间")
+        raise HTTPException(status_code=422, detail=t("cover.size_range"))
     ext = _sniff_cover_ext(data)
     if ext is None:
-        raise HTTPException(status_code=422, detail="封面只支持 JPG、PNG、WebP")
+        raise HTTPException(status_code=422, detail=t("cover.formats"))
     remote_path = _cover_remote(drama.id, ext)
     try:
         bunny.storage_upload(remote_path, data, COVER_MIME[ext])
     except bunny.BunnyError as exc:
-        raise HTTPException(status_code=502, detail=f"封面上传失败：{exc}") from exc
+        raise HTTPException(status_code=502, detail=t("cover.upload_failed", exc=exc)) from exc
     drama.cover_url = f"{bunny.image_url(remote_path)}?v={time.time_ns()}"
     db.commit()
     _purge_cover(drama.id, ext)
@@ -1975,23 +1976,23 @@ def update_user(
     if "display_name" in data:
         name = (data["display_name"] or "").strip()
         if not name:
-            raise HTTPException(status_code=422, detail="昵称不能为空")
+            raise HTTPException(status_code=422, detail=t("user.nickname_required"))
         row.display_name = name
         before["display_name"] = name
     if "email" in data:
         email = (data["email"] or "").strip().lower() or None
         if email is not None and ("@" not in email or email.startswith("@") or email.endswith("@")):
-            raise HTTPException(status_code=422, detail="邮箱格式不正确")
+            raise HTTPException(status_code=422, detail=t("user.email_invalid"))
         if email is not None:
             conflict = db.scalar(select(User.id).where(User.email == email, User.id != user_id))
             if conflict is not None:
-                raise HTTPException(status_code=409, detail="该邮箱已被其他用户绑定")
+                raise HTTPException(status_code=409, detail=t("user.email_bound"))
         row.email = email
         before["email"] = email
     if "gender" in data:
         gender = (data["gender"] or "").strip() or "unspecified"
         if gender not in GENDERS:
-            raise HTTPException(status_code=422, detail="性别取值不合法")
+            raise HTTPException(status_code=422, detail=t("user.gender_invalid"))
         row.gender = gender
         before["gender"] = gender
     if "avatar_url" in data:
@@ -2084,7 +2085,7 @@ def user_membership(
     db: Session = Depends(get_db),
     user: AdminUser = Depends(require_admin),
 ):
-    """会员详情：真实到期时间、来源、最近 6 条记录与上一次后台调整。"""
+    """Membership details: real expiry, source, latest 6 records, and the last admin adjustment."""
     account = db.get(User, user_id)
     if account is None:
         raise HTTPException(status_code=404, detail="user not found")
@@ -2110,7 +2111,7 @@ def grant_user_membership(
     db: Session = Depends(get_db),
     actor: AdminUser = Depends(require_admin_role),
 ):
-    """后台开通 / 续期：只叠 `pass_end`，不建订单、不碰 Stripe 价格。"""
+    """Admin grant / renew: only extends `pass_end`, creates no order and never touches Stripe prices."""
     if db.get(User, user_id) is None:
         raise HTTPException(status_code=404, detail="user not found")
     try:
@@ -2135,7 +2136,7 @@ def revoke_user_membership(
     db: Session = Depends(get_db),
     actor: AdminUser = Depends(require_admin_role),
 ):
-    """后台取消：Stripe 订阅先打远程，成功后本地两个时间窗一起收回。"""
+    """Admin cancel: the Stripe subscription is cancelled remotely first; on success both local time windows are reclaimed together."""
     if db.get(User, user_id) is None:
         raise HTTPException(status_code=404, detail="user not found")
     try:
@@ -2209,10 +2210,10 @@ def finance_orders(
     db: Session = Depends(get_db),
     user: AdminUser = Depends(require_admin),
 ):
-    """订单明细：下单用户 + 套餐快照 + 渠道流水，支持搜索 / 筛选 / 分页。
+    """Order details: ordering user + plan snapshot + channel ledger, with search / filter / pagination.
 
-    数据看板（/dashboard）复用本函数取最近订单，因此顶层保留 user_id /
-    amount_cents / status / created_at 这些旧字段，新增信息放在 user / plan 里。
+    The dashboard (/dashboard) reuses this function for recent orders, so the top level keeps user_id /
+    amount_cents / status / created_at as legacy fields; new info goes into user / plan.
     """
     conditions = []
     needle = (q or "").strip()
@@ -2265,7 +2266,7 @@ def finance_orders(
     failed = counts.get("failed", {"orders": 0, "amount_cents": 0})
     total_orders = sum(item["orders"] for item in counts.values()) or 0
 
-    # 今日成交按后台统一业务日（洛杉矶时区）统计，与数据看板口径一致。
+    # Today's closed deals follow the backend's unified business day (Los Angeles timezone), same basis as the dashboard.
     from app.modules.account.service import LA, la_today
 
     day_start = datetime.combine(la_today(), datetime.min.time(), tzinfo=LA).astimezone(
@@ -2297,7 +2298,7 @@ def finance_orders(
             "paid_cents": paid["amount_cents"],
             "refunded_cents": refunded["amount_cents"],
             "pending_cents": created["amount_cents"],
-            # 口径：gross = 曾经收到的钱（含后来退掉的），net = 退款后真正留下的。
+            # Basis: gross = money ever received (including later refunds), net = what actually stayed after refunds.
             "gross_cents": paid["amount_cents"] + refunded["amount_cents"],
             "net_cents": paid["amount_cents"],
             "today_paid_cents": int(today_paid_cents),
@@ -2313,7 +2314,7 @@ def finance_order_detail(
     db: Session = Depends(get_db),
     user: AdminUser = Depends(require_admin),
 ):
-    """单笔订单详情：在列表字段之外补充该用户的累计消费与当前会员状态。"""
+    """Single order details: beyond the list fields, also include the user's total spend and current membership status."""
     stmt = select(Order, User, PlanVersion, Plan)
     for target, onclause in ORDER_LEDGER_JOINS:
         stmt = stmt.outerjoin(target, onclause)

@@ -44,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     try {
       final results = await Future.wait([
-        api.getJson('/v1/config?locale=${zh ? 'zh' : 'en'}'),
+        api.getJson('/v1/config?locale=${widget.language}'),
         api.getJson('/v1/home/groups'),
       ]);
       tabs = ((results[0]['tabs'] as List?) ?? []).cast<Map<String, dynamic>>();
@@ -108,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
             color: red,
             onRefresh: load,
             child: isDiscover
-                ? _DiscoverBody(banners: banners, groups: groups, zh: zh, onOpen: widget.onOpen, onMore: openGroup)
+                ? _DiscoverBody(banners: banners, groups: groups, language: widget.language, onOpen: widget.onOpen, onMore: openGroup)
                 : _GroupTabBody(group: groupById(tab['group_id'] as int?), onOpen: widget.onOpen),
           ),
         ),
@@ -165,24 +165,24 @@ class _TabStrip extends StatelessWidget {
 }
 
 class _DiscoverBody extends StatelessWidget {
-  const _DiscoverBody({required this.banners, required this.groups, required this.zh, required this.onOpen, required this.onMore});
+  const _DiscoverBody({required this.banners, required this.groups, required this.language, required this.onOpen, required this.onMore});
   final List<Map<String, dynamic>> banners;
   final List<Map<String, dynamic>> groups;
-  final bool zh;
+  final String language;
   final void Function(int id) onOpen;
   final void Function(Map<String, dynamic> group) onMore;
 
   @override
   Widget build(BuildContext context) {
     // No banner configured: promote the first drama of the first floor.
-    final hero = banners.isNotEmpty ? banners : heroFromGroups(groups, zh ? 'zh' : 'en');
+    final hero = banners.isNotEmpty ? banners : heroFromGroups(groups, language);
     final children = <Widget>[
-      if (hero.isNotEmpty) BannerCarousel(banners: hero, onOpen: onOpen),
+      if (hero.isNotEmpty) BannerCarousel(banners: hero, language: language, onOpen: onOpen),
     ];
     for (final group in groups) {
       final dramas = ((group['dramas'] as List?) ?? []).cast<Map<String, dynamic>>();
       if (dramas.isEmpty) continue;
-      children.add(_Floor(group: group, dramas: dramas, zh: zh, onOpen: onOpen, onMore: () => onMore(group)));
+      children.add(_Floor(group: group, dramas: dramas, language: language, onOpen: onOpen, onMore: () => onMore(group)));
     }
     if (children.isEmpty) {
       return ListView(children: const [
@@ -194,8 +194,9 @@ class _DiscoverBody extends StatelessWidget {
   }
 }
 class BannerCarousel extends StatefulWidget {
-  const BannerCarousel({super.key, required this.banners, required this.onOpen});
+  const BannerCarousel({super.key, required this.banners, required this.language, required this.onOpen});
   final List<Map<String, dynamic>> banners;
+  final String language;
   final void Function(int id) onOpen;
   @override
   State<BannerCarousel> createState() => _BannerCarouselState();
@@ -274,7 +275,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(color: red, borderRadius: BorderRadius.circular(4)),
-                                child: const Text('MiniTV 独播', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+                                child: Text(Copy(widget.language).t('exclusive'), style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
                               ),
                               if (((b['kicker'] as String?) ?? '').isNotEmpty) ...[
                                 const SizedBox(height: 8),
@@ -325,16 +326,16 @@ class _BannerCarouselState extends State<BannerCarousel> {
 
 /// Floor header: red accent bar + name on the left, "更多 >" on the right.
 class _FloorHeader extends StatelessWidget {
-  const _FloorHeader({required this.name, required this.zh, required this.onMore, required this.showMore, required this.isHot});
+  const _FloorHeader({required this.name, required this.language, required this.onMore, required this.showMore, required this.isHot});
   final String name;
-  final bool zh;
+  final String language;
   final VoidCallback onMore;
   final bool showMore;
   final bool isHot;
 
   @override
   Widget build(BuildContext context) {
-    final copy = Copy(zh ? 'zh' : 'en');
+    final copy = Copy(language);
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 18, 8, 10),
       child: Row(
@@ -387,7 +388,7 @@ class _FloorHeader extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 child: Row(
                   children: [
-                    Text(zh ? '更多' : 'More', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                    Text(copy.t('more'), style: const TextStyle(color: Colors.white54, fontSize: 12)),
                     const Icon(Icons.chevron_right, color: Colors.white54, size: 16),
                   ],
                 ),
@@ -400,10 +401,10 @@ class _FloorHeader extends StatelessWidget {
 }
 
 class _Floor extends StatelessWidget {
-  const _Floor({required this.group, required this.dramas, required this.zh, required this.onOpen, required this.onMore});
+  const _Floor({required this.group, required this.dramas, required this.language, required this.onOpen, required this.onMore});
   final Map<String, dynamic> group;
   final List<Map<String, dynamic>> dramas;
-  final bool zh;
+  final String language;
   final void Function(int id) onOpen;
   final VoidCallback onMore;
 
@@ -419,11 +420,11 @@ class _Floor extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _FloorHeader(name: name, zh: zh, onMore: onMore, showMore: dramas.length > limit, isHot: isHot),
+        _FloorHeader(name: name, language: language, onMore: onMore, showMore: dramas.length > limit, isHot: isHot),
         if (style == 'rank')
-          _RankListCard(dramas: dramas.take(3).toList(), zh: zh, onOpen: onOpen)
+          _RankListCard(dramas: dramas.take(3).toList(), language: language, onOpen: onOpen)
         else if (style == 'grid2')
-          _LandscapeGrid(dramas: dramas.take(4).toList(), badge: badge, zh: zh, onOpen: onOpen)
+          _LandscapeGrid(dramas: dramas.take(4).toList(), badge: badge, language: language, onOpen: onOpen)
         else
           _PosterGrid(dramas: dramas.take(6).toList(), columns: 3, badge: badge, onOpen: onOpen),
       ],
@@ -541,14 +542,15 @@ class _PosterGrid extends StatelessWidget {
 /// grid2: two-column landscape still cards. badge=label paints a red chip
 /// (热播 / HOT) at the card's top-left corner.
 class _LandscapeGrid extends StatelessWidget {
-  const _LandscapeGrid({required this.dramas, required this.badge, required this.zh, required this.onOpen});
+  const _LandscapeGrid({required this.dramas, required this.badge, required this.language, required this.onOpen});
   final List<Map<String, dynamic>> dramas;
   final String badge;
-  final bool zh;
+  final String language;
   final void Function(int id) onOpen;
 
   @override
   Widget build(BuildContext context) {
+    final copy = Copy(language);
     final rows = <Widget>[];
     for (var start = 0; start < dramas.length; start += 2) {
       final slice = dramas.sublist(start, start + 2 > dramas.length ? dramas.length : start + 2);
@@ -562,7 +564,7 @@ class _LandscapeGrid extends StatelessWidget {
                 child: Padding(
                   padding: EdgeInsets.only(left: i == 0 ? 0 : 8),
                   child: i < slice.length
-                      ? _LandscapeCard(drama: slice[i], chip: badge == 'label' ? (zh ? '热播' : 'HOT') : null, onOpen: onOpen)
+                      ? _LandscapeCard(drama: slice[i], chip: badge == 'label' ? copy.t('hot') : null, onOpen: onOpen)
                       : const SizedBox.shrink(),
                 ),
               ),
@@ -629,9 +631,9 @@ class _LandscapeCard extends StatelessWidget {
 /// rank: vertical ranking list inside a dark card — big rank number, small
 /// poster thumb, title + "NO.x" caption. Shows the top 3; #1 wears a crown.
 class _RankListCard extends StatelessWidget {
-  const _RankListCard({required this.dramas, required this.zh, required this.onOpen});
+  const _RankListCard({required this.dramas, required this.language, required this.onOpen});
   final List<Map<String, dynamic>> dramas;
-  final bool zh;
+  final String language;
   final void Function(int id) onOpen;
 
   static const _rankColors = [Color(0xFFFFB23E), Color(0xFFB9C0CC), Color(0xFF8A8F9C)];
@@ -693,7 +695,7 @@ class _RankListCard extends StatelessWidget {
                               const Icon(Icons.local_fire_department, color: Color(0xFFFF6B3E), size: 11),
                               const SizedBox(width: 2),
                               Text(
-                                formatCount((dramas[i]['play_count'] as int?) ?? 0, zh: zh),
+                                formatCount((dramas[i]['play_count'] as int?) ?? 0, locale: language),
                                 style: const TextStyle(color: Colors.white38, fontSize: 11),
                               ),
                             ],

@@ -1,4 +1,4 @@
-"""For-You feed recommendation ("发现 / For You" vertical swipe surface).
+"""For-You feed recommendation ("Discover / For You" vertical swipe surface).
 
 The pipeline is deliberately split into three replaceable stages:
 

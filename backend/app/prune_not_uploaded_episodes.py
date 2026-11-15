@@ -1,9 +1,9 @@
 """Remove placeholder episodes that were registered but never uploaded.
 
-``app.seed_catalog_episodes`` and the admin "登记 N 集" action register every
+``app.seed_catalog_episodes`` and the admin "register N episodes" action register every
 episode of a drama as a ``not_uploaded`` row, including episodes we have no
 video for. Those rows can never play, and the admin console can now create
-episodes on demand while uploading the video ("上传新分集"), so the leftovers
+episodes on demand while uploading the video ("upload a new episode"), so the leftovers
 are noise: they inflate ``episode_count`` and bury the playable episodes.
 
 This command deletes episode rows whose status is ``not_uploaded`` and that

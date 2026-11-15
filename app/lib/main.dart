@@ -57,6 +57,10 @@ class _MiniTvAppState extends State<MiniTvApp> {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeData(scaffoldBackgroundColor: bg, brightness: Brightness.dark),
+        // Declared so Localizations.localeOf(context) resolves to vi on a
+        // Vietnamese device (channel/episode_player build Copy from it).
+        // The app's own strings still come from the saved language state.
+        supportedLocales: const [Locale('en'), Locale('zh'), Locale('vi')],
         home: HomeShell(language: language, onLanguage: setLanguage),
       ),
     );
@@ -153,9 +157,12 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               title: Text(tab == 0 ? 'MiniTV' : copy.t(['nav.home', 'nav.foryou', 'nav.rewards', 'nav.me'][tab])),
               actions: [
                 TextButton(
-                  onPressed: () => widget.onLanguage(widget.language == 'zh' ? 'en' : 'zh'),
+                  // Header toggle cycles zh → en → vi → zh; the label names
+                  // the language it switches *to*.
+                  onPressed: () => widget.onLanguage(
+                      widget.language == 'zh' ? 'en' : widget.language == 'en' ? 'vi' : 'zh'),
                   child: Text(
-                    widget.language == 'zh' ? 'EN' : '中',
+                    widget.language == 'zh' ? 'EN' : widget.language == 'en' ? 'VI' : '中',
                     style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                 ),

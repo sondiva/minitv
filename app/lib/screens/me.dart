@@ -995,7 +995,7 @@ class _SettingsSheet extends StatelessWidget {
               children: [
                 Text(copy.t('me_language'), style: const TextStyle(color: Colors.white70, fontSize: 13)),
                 const SizedBox(width: 12),
-                for (final (value, label) in [('en', 'English'), ('zh', '中文')])
+                for (final (value, label) in [('en', 'English'), ('zh', '中文'), ('vi', 'Tiếng Việt')])
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: GestureDetector(

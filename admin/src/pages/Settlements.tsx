@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button, Input, Modal, Space, Table, Tag, Typography, message } from "antd";
 import { api, errorText } from "../api";
 import { formatTime, useLoad } from "../hooks";
+import { t } from "../copy";
 
 type Row = {
   id: number;
@@ -18,11 +19,11 @@ type Row = {
   paid_at: string | null;
 };
 
-const STATUS: Record<string, { text: string; color?: string }> = {
-  draft: { text: "待确认", color: "orange" },
-  confirmed: { text: "已确认", color: "blue" },
-  paid: { text: "已打款", color: "green" },
-};
+function STATUS(): Record<string, { text: string; color?: string }> { return {
+  draft: { text: t("settlements.pending_confirm"), color: "orange" },
+  confirmed: { text: t("settlements.confirmed"), color: "blue" },
+  paid: { text: t("settlements.paid"), color: "green" },
+};; }
 
 const money = (cents: number, currency = "USD") =>
   `${currency === "USD" ? "$" : ""}${(cents / 100).toFixed(2)}`;
@@ -43,7 +44,7 @@ export default function Settlements() {
         { method: "POST", body: JSON.stringify({ month: query }) }
       );
       message.success(
-        `生成完成：新建 ${result.created} · 更新 ${result.updated} · 跳过 ${result.skipped}`
+        t("settlements.generate_summary", {v0: result.created, v1: result.updated, v2: result.skipped})
       );
       await reload();
     } catch (e) {
@@ -53,19 +54,19 @@ export default function Settlements() {
 
   const change = (row: Row, status: "confirmed" | "paid") => {
     Modal.confirm({
-      title: status === "confirmed" ? "确认对账单" : "标记已打款",
+      title: status === "confirmed" ? t("settlements.confirm_statement") : t("settlements.mark_paid"),
       content:
         status === "confirmed"
-          ? `确认 ${row.supplier?.name ?? ""} ${row.month} 的金额 ${money(row.revenue_cents, row.currency)}？确认后重新生成不会覆盖。`
-          : `记录 ${row.month} 的 ${money(row.revenue_cents, row.currency)} 已打款？`,
-      okText: status === "confirmed" ? "确认" : "已打款",
+          ? t("settlements.confirm_amount", {v0: row.supplier?.name ?? "", v1: row.month, v2: money(row.revenue_cents, row.currency)})
+          : t("settlements.record_paid", {v0: row.month, v1: money(row.revenue_cents, row.currency)}),
+      okText: status === "confirmed" ? t("common.confirm") : t("settlements.paid"),
       onOk: async () => {
         try {
           await api(`/admin/v1/settlements/${row.id}/status`, {
             method: "POST",
             body: JSON.stringify({ status }),
           });
-          message.success("已更新");
+          message.success(t("settlements.updated"));
           await reload();
         } catch (e) {
           message.error(errorText(e));
@@ -84,12 +85,12 @@ export default function Settlements() {
           onChange={(event) => setMonth(event.target.value)}
           style={{ width: 160 }}
         />
-        <Button onClick={() => setQuery(month)}>查询</Button>
+        <Button onClick={() => setQuery(month)}>{t("settlements.query")}</Button>
         <Button type="primary" onClick={generate}>
-          生成 / 更新该月对账单
+          {t("settlements.generate_statement")}
         </Button>
         <Typography.Text type="secondary">
-          只统计每个用户的首单；已确认或已打款的月份不会被覆盖。
+          {t("settlements.first_order_only_note")}
         </Typography.Text>
       </Space>
 
@@ -100,40 +101,40 @@ export default function Settlements() {
         pagination={false}
         scroll={{ x: 940 }}
         columns={[
-          { title: "供应商", key: "supplier", width: 160, render: (_, row) => row.supplier?.name ?? "-" },
-          { title: "月份", dataIndex: "month", width: 100 },
+          { title: t("suppliers.supplier"), key: "supplier", width: 160, render: (_, row) => row.supplier?.name ?? "-" },
+          { title: t("settlements.month"), dataIndex: "month", width: 100 },
           {
-            title: "首单金额",
+            title: t("settlements.first_order_amount"),
             dataIndex: "gross_cents",
             width: 120,
             render: (value: number, row) => money(value, row.currency),
           },
           {
-            title: "分成",
+            title: t("suppliers.revenue_share"),
             dataIndex: "effective_share_bps",
             width: 90,
             render: (value: number) => `${(value / 100).toFixed(2)}%`,
           },
           {
-            title: "应结金额",
+            title: t("settlements.payable_amount"),
             dataIndex: "revenue_cents",
             width: 120,
             render: (value: number, row) => (
               <Typography.Text strong>{money(value, row.currency)}</Typography.Text>
             ),
           },
-          { title: "订单数", dataIndex: "order_count", width: 80 },
+          { title: t("settlements.order_count"), dataIndex: "order_count", width: 80 },
           {
-            title: "状态",
+            title: t("common.status"),
             dataIndex: "status",
             width: 100,
             render: (value: string) => {
-              const meta = STATUS[value] ?? { text: value };
+              const meta = STATUS()[value] ?? { text: value };
               return <Tag color={meta.color}>{meta.text}</Tag>;
             },
           },
           {
-            title: "确认 / 打款",
+            title: t("settlements.confirm_or_pay"),
             key: "dates",
             width: 180,
             render: (_, row) => (
@@ -143,19 +144,19 @@ export default function Settlements() {
             ),
           },
           {
-            title: "操作",
+            title: t("common.actions"),
             key: "actions",
             width: 150,
             render: (_, row) => (
               <Space size={4}>
                 {row.status === "draft" && (
                   <Button type="link" size="small" onClick={() => change(row, "confirmed")}>
-                    确认
+                    {t("common.confirm")}
                   </Button>
                 )}
                 {row.status === "confirmed" && (
                   <Button type="link" size="small" onClick={() => change(row, "paid")}>
-                    标记打款
+                    {t("settlements.mark_payment")}
                   </Button>
                 )}
               </Space>

@@ -17,6 +17,7 @@ import { message } from "antd";
 import { api, errorText } from "../api";
 import { MAX_UPLOAD_BYTES, directUpload, probeVideo, waitForTranscode } from "./episodeUpload";
 import type { UploadSession, VideoMeta } from "./episodeUpload";
+import { t } from "../copy";
 
 export const MAX_CONCURRENT_UPLOADS = 2;
 
@@ -28,7 +29,7 @@ export type TitleRule =
   | { kind: "custom"; template: string };
 
 export function titleFor(rule: TitleRule, number: number): string {
-  if (rule.kind === "episode-cn") return `第 ${number} 集`;
+  if (rule.kind === "episode-cn") return t("batchupload.episode_title", {v0: number});
   if (rule.kind === "custom") {
     const template = rule.template.trim();
     if (template) return template.split("{n}").join(String(number)).slice(0, 200);
@@ -140,7 +141,10 @@ function afterWork(item: BatchItem): void {
     announced = true;
     const done = state.items.filter((row) => row.status === "done").length;
     const failed = state.items.filter((row) => row.status === "failed").length;
-    message.success(`批量上传结束：成功 ${done} 个${failed ? `，失败 ${failed} 个（可单独重试）` : ""}`);
+    message.success(
+      t("batchupload.finish_done", { v0: done }) +
+        (failed ? t("batchupload.finish_failed", { v0: failed }) : "")
+    );
   }
 }
 
@@ -159,7 +163,7 @@ function pump(): void {
 }
 
 function assertAlive(uid: number): void {
-  if (cancelled.has(uid) || !byUid(uid)) throw new Error("已取消");
+  if (cancelled.has(uid) || !byUid(uid)) throw new Error(t("batchupload.cancelled"));
 }
 
 async function runItem(item: BatchItem): Promise<void> {
@@ -168,7 +172,7 @@ async function runItem(item: BatchItem): Promise<void> {
   patch(uid, { status: "uploading", progress: 0, error: null, overdue: false });
   try {
     if (item.meta == null) {
-      throw new Error(item.probeError ?? "视频信息无效，请重新加入该文件");
+      throw new Error(item.probeError ?? t("batchupload.invalid_video_info"));
     }
     if (item.episodeId == null) {
       const created = await api<{ id: number }>(`/admin/v1/dramas/${item.dramaId}/episodes`, {
@@ -210,7 +214,7 @@ async function runItem(item: BatchItem): Promise<void> {
     }
     if (byUid(uid)) {
       patch(uid, { status: "failed", error: reason });
-      message.error(`第 ${item.episodeNumber} 集上传失败：${reason}`);
+      message.error(t("batchupload.episode_upload_failed", {v0: item.episodeNumber, v1: reason}));
       afterWork(item);
     }
   } finally {
@@ -223,7 +227,7 @@ async function runItem(item: BatchItem): Promise<void> {
 
 async function createSession(item: BatchItem): Promise<UploadSession> {
   const meta = item.meta;
-  if (meta == null) throw new Error("视频信息无效，请重新加入该文件");
+  if (meta == null) throw new Error(t("batchupload.invalid_video_info"));
   const payload = JSON.stringify({
     filename: item.file.name,
     mime: item.file.type || "video/mp4",
@@ -254,8 +258,8 @@ async function pollTranscode(uid: number, episodeId: number): Promise<void> {
   const item = byUid(uid);
   if (!item || item.status !== "transcoding") return;
   if (final === "transcode_failed") {
-    patch(uid, { status: "failed", error: "Bunny 转码失败，请检查视频后重试" });
-    message.error(`第 ${item.episodeNumber} 集转码失败`);
+    patch(uid, { status: "failed", error: t("batchupload.bunny_transcode_failed") });
+    message.error(t("batchupload.episode_transcode_failed", {v0: item.episodeNumber}));
     afterWork(item);
   } else if (final === "transcoding") {
     patch(uid, { overdue: true });
@@ -279,7 +283,7 @@ function probeItem(item: BatchItem): void {
       if (!byUid(item.uid)) return;
       const reason = errorText(e);
       patch(item.uid, { status: "failed", error: reason, probeError: reason });
-      message.error(`无法读取视频信息：${item.file.name}`);
+      message.error(t("batchupload.cannot_read_video", {v0: item.file.name}));
       afterWork(item);
     }
   })();
@@ -297,11 +301,11 @@ function addFiles(opts: { dramaId: string; files: File[]; startNumber: number; r
     const looksLikeVideo =
       ["video/mp4", "video/quicktime"].includes(file.type) || /\.(mp4|mov)$/i.test(file.name);
     if (!looksLikeVideo) {
-      rejected.push(`${file.name}（仅支持 MP4 / MOV）`);
+      rejected.push(t("batchupload.only_mp4_mov", {v0: file.name}));
       continue;
     }
     if (file.size > MAX_UPLOAD_BYTES) {
-      rejected.push(`${file.name}（超过 200MB）`);
+      rejected.push(t("batchupload.over_200mb", {v0: file.name}));
       continue;
     }
     const key = `${file.name}:${file.size}`;

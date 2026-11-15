@@ -7,14 +7,20 @@ const red = Color(0xFFE53B3E);
 const gold = Color(0xFFF5B942);
 const sheet = Color(0xFF171013);
 
-/// 12K / 3.4万 style counts, matching H5 `formatCount`.
-String formatCount(int value, {bool zh = false}) {
+/// 12K / 3.4万 / 12 N style counts, matching H5 `formatCount`.
+/// Vietnamese compacts with N (nghìn) and Tr (triệu).
+String formatCount(int value, {String locale = 'en'}) {
   String trim(double v) {
     final text = v.toStringAsFixed(1);
     return text.endsWith('.0') ? text.substring(0, text.length - 2) : text;
   }
 
-  if (zh) return value >= 10000 ? '${trim(value / 10000)}万' : '$value';
+  if (locale == 'zh') return value >= 10000 ? '${trim(value / 10000)}万' : '$value';
+  if (locale == 'vi') {
+    if (value >= 1000000) return '${trim(value / 1000000)} Tr';
+    if (value >= 1000) return '${trim(value / 1000)} N';
+    return '$value';
+  }
   if (value >= 1000000) return '${trim(value / 1000000)}M';
   if (value >= 1000) return '${trim(value / 1000)}K';
   return '$value';

@@ -1,4 +1,4 @@
-"""Partner surface: /partner/v1 — the only API a 上剧方 (supplier) may call.
+"""Partner surface: /partner/v1 — the only API a supplier may call.
 
 Every query is scoped by the caller's `supplier_id`; there is no code path that
 returns or mutates another tenant's rows. P1 shipped read-only endpoints, P2
@@ -17,6 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.i18n import t
 from app.modules.billing.models import Order
 from app.modules.common.models import AuditLog
 from app.modules.ops import settlements as settlement_service
@@ -61,7 +62,7 @@ def _bearer_token(request: Request) -> str:
     if not auth.startswith("Bearer "):
         raise HTTPException(
             status_code=401,
-            detail={"code": "missing_credential", "message": "缺少 Authorization 头"},
+            detail={"code": "missing_credential", "message": t("auth.missing_credential")},
             headers={"WWW-Authenticate": "Bearer"},
         )
     return auth[len("Bearer "):]
@@ -76,7 +77,7 @@ def _resolve(request: Request, db: Session) -> tuple[AdminUser, AdminApiKey | No
         if user.role == ROLE_PARTNER and not request.url.path.startswith("/partner/v1/"):
             raise HTTPException(
                 status_code=403,
-                detail={"code": "partner_scope_denied", "message": "上剧方密钥只能访问合作方接口"},
+                detail={"code": "partner_scope_denied", "message": t("auth.partner_scope_denied")},
             )
         request.state.api_key_id = key.id
         request.state.api_key_staff_id = user.id
@@ -84,11 +85,11 @@ def _resolve(request: Request, db: Session) -> tuple[AdminUser, AdminApiKey | No
     try:
         user = ops_service.resolve_session_token(db, credential)
     except ops_service.SessionStoreUnavailable as exc:
-        raise HTTPException(status_code=503, detail="会话存储不可用") from exc
+        raise HTTPException(status_code=503, detail=t("auth.session_unavailable")) from exc
     if user is None:
         raise HTTPException(
             status_code=401,
-            detail={"code": "invalid_session", "message": "会话无效或已过期"},
+            detail={"code": "invalid_session", "message": t("auth.invalid_session")},
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user, None
@@ -98,13 +99,13 @@ def _require_supplier(db: Session, user: AdminUser) -> Supplier:
     if user.role != ROLE_PARTNER or user.supplier_id is None:
         raise HTTPException(
             status_code=403,
-            detail={"code": "partner_only", "message": "该接口仅对上剧方开放"},
+            detail={"code": "partner_only", "message": t("auth.partner_only")},
         )
     supplier = db.get(Supplier, user.supplier_id)
     if supplier is None or supplier.status != STATUS_ACTIVE:
         raise HTTPException(
             status_code=403,
-            detail={"code": "supplier_disabled", "message": "供应商已停用"},
+            detail={"code": "supplier_disabled", "message": t("auth.supplier_disabled")},
         )
     return supplier
 
@@ -122,7 +123,7 @@ def require_partner_session(request: Request, db: Session = Depends(get_db)) -> 
     if api_key_service.looks_like_key(_bearer_token(request)):
         raise HTTPException(
             status_code=403,
-            detail={"code": "session_required", "message": "该接口只能用登录会话调用"},
+            detail={"code": "session_required", "message": t("auth.session_required")},
         )
     user, _ = _resolve(request, db)
     _require_supplier(db, user)
@@ -226,13 +227,13 @@ def _editable(drama: Drama) -> None:
             status_code=409,
             detail={
                 "code": "drama_locked",
-                "message": f"剧集当前状态 {drama.status}，上剧方只能编辑草稿",
+                "message": t("drama.status_not_draft", status=drama.status),
             },
         )
     if drama.review_state == "pending":
         raise HTTPException(
             status_code=409,
-            detail={"code": "drama_in_review", "message": "审核中不可修改"},
+            detail={"code": "drama_in_review", "message": t("drama.in_review_locked")},
         )
 
 
@@ -293,7 +294,7 @@ def _drama_out(db: Session, drama: Drama, *, with_episodes: bool = False) -> dic
                 "upload_status": uploads.get(item.id),
                 "duration_seconds": item.duration_seconds,
                 "size_bytes": item.size_bytes,
-                # Drives the row-level 预览 button: an episode without a Bunny
+                # Drives the row-level preview button: an episode without a Bunny
                 # video has nothing to sign, so the UI must not offer playback.
                 "has_video": bool(item.bunny_video_id),
             }
@@ -309,9 +310,9 @@ def _drama_out(db: Session, drama: Drama, *, with_episodes: bool = False) -> dic
 def _replace_tags(db: Session, drama: Drama, tag_ids: list[int]) -> None:
     rows = db.scalars(select(Tag).where(Tag.id.in_(tag_ids))).all() if tag_ids else []
     if len(rows) != len(set(tag_ids)):
-        raise HTTPException(status_code=422, detail="存在无效的标签")
+        raise HTTPException(status_code=422, detail=t("drama.invalid_tags"))
     if any(tag.status != "enabled" for tag in rows):
-        raise HTTPException(status_code=422, detail="存在已下线的标签")
+        raise HTTPException(status_code=422, detail=t("drama.offline_tags"))
     db.execute(delete(DramaTag).where(DramaTag.drama_id == drama.id))
     for tag in rows:
         db.add(DramaTag(drama_id=drama.id, tag_id=tag.id))
@@ -344,9 +345,9 @@ def change_password(
     db: Session = Depends(get_db),
 ):
     if not ops_service.verify_password(body.old_password, user.password_hash):
-        raise HTTPException(status_code=400, detail="原密码不正确")
+        raise HTTPException(status_code=400, detail=t("auth.password_wrong"))
     if body.new_password == body.old_password:
-        raise HTTPException(status_code=422, detail="新密码不能与原密码相同")
+        raise HTTPException(status_code=422, detail=t("auth.password_same"))
     killed = ops_service.revoke_user_sessions(user.id)
     user.password_hash = ops_service.hash_password(body.new_password)
     db.commit()
@@ -358,7 +359,7 @@ def logout(request: Request, user: AdminUser = Depends(require_partner_session))
     try:
         ops_service.logout(_bearer_token(request))
     except ops_service.SessionStoreUnavailable as exc:
-        raise HTTPException(status_code=503, detail="会话存储不可用") from exc
+        raise HTTPException(status_code=503, detail=t("auth.session_unavailable")) from exc
     return {"ok": True}
 
 
@@ -461,14 +462,14 @@ def create_drama(
 ):
     title = body.title.strip()
     if not title:
-        raise HTTPException(status_code=422, detail="剧名不能为空")
+        raise HTTPException(status_code=422, detail=t("drama.title_required"))
     exists = db.scalar(
         select(Drama).where(Drama.supplier_id == user.supplier_id, Drama.title == title)
     )
     if exists is not None:
         raise HTTPException(
             status_code=409,
-            detail={"code": "title_exists", "message": "你已有同名剧", "drama_id": exists.id},
+            detail={"code": "title_exists", "message": t("drama.title_exists_partner"), "drama_id": exists.id},
         )
     drama = Drama(
         title=title,
@@ -486,7 +487,7 @@ def create_drama(
         db.flush()
     except IntegrityError as exc:
         db.rollback()
-        raise HTTPException(status_code=409, detail="同名剧已存在") from exc
+        raise HTTPException(status_code=409, detail=t("drama.title_exists")) from exc
     _audit(db, user, "partner_drama_create", drama.id, {"title": drama.title})
     db.commit()
     db.refresh(drama)
@@ -517,7 +518,7 @@ def update_drama(
     if data.get("title") is not None:
         title = data["title"].strip()
         if not title:
-            raise HTTPException(status_code=422, detail="剧名不能为空")
+            raise HTTPException(status_code=422, detail=t("drama.title_required"))
         other = db.scalar(
             select(Drama).where(
                 Drama.supplier_id == user.supplier_id,
@@ -528,7 +529,7 @@ def update_drama(
         if other is not None:
             raise HTTPException(
                 status_code=409,
-                detail={"code": "title_exists", "message": "你已有同名剧", "drama_id": other.id},
+                detail={"code": "title_exists", "message": t("drama.title_exists_partner"), "drama_id": other.id},
             )
         drama.title = title
     for field in ("synopsis", "cover_url", "country_allowlist"):
@@ -562,18 +563,18 @@ async def upload_cover(
     drama = _partner_drama_or_404(db, user, drama_id)
     _editable(drama)
     if not bunny.live():
-        raise HTTPException(status_code=503, detail="图片存储未配置，可先填写封面链接")
+        raise HTTPException(status_code=503, detail=t("cover.storage_unconfigured"))
     data = await file.read(COVER_MAX_BYTES + 1)
     if not data or len(data) > COVER_MAX_BYTES:
-        raise HTTPException(status_code=422, detail="封面大小需在 1 字节到 5MB 之间")
+        raise HTTPException(status_code=422, detail=t("cover.size_range"))
     ext = _sniff_cover_ext(data)
     if ext is None:
-        raise HTTPException(status_code=422, detail="封面只支持 JPG、PNG、WebP")
+        raise HTTPException(status_code=422, detail=t("cover.formats"))
     remote_path = _cover_remote(drama.id, ext)
     try:
         bunny.storage_upload(remote_path, data, COVER_MIME[ext])
     except bunny.BunnyError as exc:
-        raise HTTPException(status_code=502, detail=f"封面上传失败：{exc}") from exc
+        raise HTTPException(status_code=502, detail=t("cover.upload_failed", exc=exc)) from exc
     drama.cover_url = f"{bunny.image_url(remote_path)}?v={datetime.now(timezone.utc).timestamp()}"
     _audit(db, user, "partner_cover_upload", drama.id, {})
     db.commit()
@@ -596,7 +597,7 @@ def create_episode(
     _editable(drama)
     count = _episode_count(db, drama.id)
     if count >= MAX_EPISODES:
-        raise HTTPException(status_code=422, detail=f"单部剧最多 {MAX_EPISODES} 集")
+        raise HTTPException(status_code=422, detail=t("drama.max_episodes", max=MAX_EPISODES))
     number = body.episode_number
     if number is None:
         number = (
@@ -610,11 +611,11 @@ def create_episode(
             Episode.drama_id == drama.id, Episode.episode_number == number
         )
     ):
-        raise HTTPException(status_code=409, detail=f"第 {number} 集已存在")
+        raise HTTPException(status_code=409, detail=t("drama.episode_exists", number=number))
     episode = Episode(
         drama_id=drama.id,
         episode_number=number,
-        title=body.title.strip() or f"第 {number} 集",
+        title=body.title.strip() or t("drama.episode_default_title", number=number),
         status="not_uploaded",
     )
     db.add(episode)
@@ -649,7 +650,7 @@ def update_episode(
             )
         )
         if taken:
-            raise HTTPException(status_code=409, detail=f"第 {body.episode_number} 集已存在")
+            raise HTTPException(status_code=409, detail=t("drama.episode_exists", number=body.episode_number))
         episode.episode_number = body.episode_number
     if body.title is not None:
         episode.title = body.title.strip()
@@ -673,7 +674,7 @@ def delete_episode(
     if episode.status != "not_uploaded":
         raise HTTPException(
             status_code=409,
-            detail={"code": "episode_has_video", "message": "已上传视频的分集不能删除"},
+            detail={"code": "episode_has_video", "message": t("drama.episode_has_video")},
         )
     number = episode.episode_number
     db.delete(episode)
@@ -700,7 +701,7 @@ def episode_preview_url(
     if not episode.bunny_video_id:
         raise HTTPException(
             status_code=409,
-            detail={"code": "no_video", "message": "该集还没有可预览的视频"},
+            detail={"code": "no_video", "message": t("drama.no_video_preview")},
         )
     try:
         signed = bunny.stream_embed_url(episode.bunny_video_id, ttl=3600)
@@ -844,7 +845,7 @@ def upload_headers(
     if episode.status != "transcoding":
         raise HTTPException(
             status_code=409,
-            detail={"code": "upload_not_resumable", "message": "只有转码中的分集可以续传"},
+            detail={"code": "upload_not_resumable", "message": t("episode.only_transcoding_resume")},
         )
     upload = db.scalars(
         select(MediaUpload)
@@ -877,7 +878,7 @@ def upload_status(
         .order_by(MediaUpload.id.desc())
     ).first()
     # A session that never received bytes would otherwise sit in "transcoding"
-    # forever (the supplier sees 转码中 and cannot retry). 30 minutes is beyond
+    # forever (the supplier sees "transcoding" and cannot retry). 30 minutes is beyond
     # a realistic 200MB upload on a slow link, so it is safe to call it dead.
     if (
         episode.status == "transcoding"
@@ -985,7 +986,7 @@ def delete_drama(
     if any(item.status != "not_uploaded" for item in episodes):
         raise HTTPException(
             status_code=409,
-            detail={"code": "drama_has_video", "message": "已上传视频的剧集不能删除"},
+            detail={"code": "drama_has_video", "message": t("drama.has_video")},
         )
     title = drama.title
     for item in episodes:
@@ -1007,28 +1008,28 @@ def submit_drama(
     if drama.status != "draft":
         raise HTTPException(
             status_code=409,
-            detail={"code": "drama_locked", "message": "只有草稿可以提交审核"},
+            detail={"code": "drama_locked", "message": t("drama.only_draft_submit")},
         )
     if drama.review_state not in ("none", "rejected"):
         raise HTTPException(
             status_code=409,
-            detail={"code": "drama_in_review", "message": "已提交，等待审核"},
+            detail={"code": "drama_in_review", "message": t("drama.submitted")},
         )
     if not drama.cover_url:
         raise HTTPException(
-            status_code=422, detail={"code": "cover_required", "message": "请先上传封面"}
+            status_code=422, detail={"code": "cover_required", "message": t("drama.cover_required")}
         )
     if len((drama.synopsis or "").strip()) < 30:
         raise HTTPException(
             status_code=422,
-            detail={"code": "synopsis_too_short", "message": "简介至少 30 字"},
+            detail={"code": "synopsis_too_short", "message": t("drama.synopsis_too_short")},
         )
     episodes = db.scalars(
         select(Episode).where(Episode.drama_id == drama.id).order_by(Episode.episode_number)
     ).all()
     if not episodes:
         raise HTTPException(
-            status_code=422, detail={"code": "episodes_required", "message": "至少上传 1 集"}
+            status_code=422, detail={"code": "episodes_required", "message": t("drama.episodes_required")}
         )
     pending = [e.episode_number for e in episodes if e.status != "in_review"]
     if pending:
@@ -1036,7 +1037,7 @@ def submit_drama(
             status_code=422,
             detail={
                 "code": "episodes_not_ready",
-                "message": f"第 {', '.join(map(str, pending))} 集尚未完成转码",
+                "message": t("drama.episodes_not_ready", numbers=", ".join(map(str, pending))),
                 "episodes": pending,
             },
         )
@@ -1046,7 +1047,7 @@ def submit_drama(
             status_code=422,
             detail={
                 "code": "free_episode_count_out_of_range",
-                "message": f"免费集数需在 {floor}–{len(episodes)} 之间",
+                "message": t("drama.free_count_range", floor=floor, total=len(episodes)),
                 "floor": floor,
                 "max": len(episodes),
             },
@@ -1341,7 +1342,7 @@ def current_key_info(
     """
     credential = _bearer_token(request)
     if not api_key_service.looks_like_key(credential):
-        raise HTTPException(status_code=400, detail="请使用 API Key 调用")
+        raise HTTPException(status_code=400, detail=t("auth.use_api_key"))
     key = db.scalar(
         select(AdminApiKey).where(
             AdminApiKey.key_prefix == credential[: api_key_service.KEY_PREFIX_LEN]

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getJson } from "../api";
 import type { Locale } from "../copy";
-import { t, floorName } from "../copy";
+import { HOT_NAME_MARKER, t, floorName, tabTitle } from "../copy";
 import { formatCount } from "../format";
 import { IMG, thumb } from "../img";
 import {
@@ -25,7 +25,6 @@ interface Props {
 const DEFAULT_TAB: ChannelTab = {
   code: "discover",
   title_en: "Discover",
-  title_zh: "发现",
   position: 0,
   locked: true,
   group_id: null,
@@ -114,7 +113,7 @@ export function HomePage({ locale, onOpen }: Props) {
                 className={active ? "channel-tab on" : "channel-tab"}
                 onClick={() => setTabIndex(index)}
               >
-                <span>{locale === "zh" && item.title_zh ? item.title_zh : item.title_en}</span>
+                <span>{tabTitle(item, locale)}</span>
                 {active && <span className="channel-indicator" />}
               </button>
             );
@@ -214,7 +213,7 @@ function BannerCarousel({ banners, locale, onOpen }: { banners: Banner[]; locale
                 <h2 className="headline">{banner.headline || banner.title || ""}</h2>
                 <span className="banner-play-btn" aria-hidden="true">
                   <IconPlaySmall size={14} />
-                  <span>{locale === "zh" ? "立即观看" : "Watch"}</span>
+                  <span>{t(locale, "watch_now")}</span>
                 </span>
               </div>
             </div>
@@ -240,7 +239,7 @@ function Floor({
 }) {
   const style = group.style || "poster3";
   const limit = style === "rank" ? 3 : style === "grid2" ? 4 : 6;
-  const isHot = group.name.toLowerCase().includes("hot") || group.name.includes("热");
+  const isHot = group.name.toLowerCase().includes("hot") || group.name.includes(HOT_NAME_MARKER);
   return (
     <section className="floor-section">
       <div className="floor-head">

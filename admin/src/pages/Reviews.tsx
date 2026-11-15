@@ -14,6 +14,7 @@ import {
 } from "antd";
 import { api, errorText } from "../api";
 import { formatTime, useLoad } from "../hooks";
+import { t } from "../copy";
 
 type ReviewRow = {
   id: number;
@@ -35,11 +36,11 @@ type Payload = {
   counts: { pending: number; approved: number; rejected: number };
 };
 
-const TABS = [
-  { key: "pending", label: "待审核" },
-  { key: "approved", label: "待上架" },
-  { key: "rejected", label: "已驳回" },
-];
+function TABS(){ return [
+  { key: "pending", label: t("common.pending_review") },
+  { key: "approved", label: t("partnerdramas.pending_publish") },
+  { key: "rejected", label: t("reviews.rejected") },
+];; }
 
 export default function Reviews() {
   const [state, setState] = useState("pending");
@@ -73,19 +74,19 @@ export default function Reviews() {
       );
       if (result.skipped.length) {
         Modal.info({
-          title: `已处理 ${result.done} 部，跳过 ${result.skipped.length} 部`,
+          title: t("reviews.processed_summary", {v0: result.done, v1: result.skipped.length}),
           content: (
             <ul style={{ paddingLeft: 18 }}>
               {result.skipped.map((item) => (
                 <li key={item.id}>
-                  剧集 {item.id}：{item.reason}
+                  {t("reviews.drama_reason", {v0: item.id, v1: item.reason})}
                 </li>
               ))}
             </ul>
           ),
         });
       } else {
-        message.success(decision === "approve" ? "已通过" : "已驳回");
+        message.success(decision === "approve" ? t("reviews.approved") : t("reviews.rejected"));
       }
       await refresh();
     } catch (e) {
@@ -102,13 +103,13 @@ export default function Reviews() {
 
   const publish = (row: ReviewRow) => {
     Modal.confirm({
-      title: `上架《${row.title}》`,
-      content: `${row.episode_count} 集将同时对用户可见，确认上架？`,
-      okText: "上架",
+      title: t("reviews.publish_title", {v0: row.title}),
+      content: t("reviews.publish_confirm", {v0: row.episode_count}),
+      okText: t("episodespanel.publish"),
       onOk: async () => {
         try {
           await api(`/admin/v1/reviews/${row.id}/publish`, { method: "POST" });
-          message.success("已上架");
+          message.success(t("common.published"));
           await refresh();
         } catch (e) {
           message.error(errorText(e));
@@ -124,16 +125,16 @@ export default function Reviews() {
     <Space direction="vertical" style={{ width: "100%" }} size="middle">
       <Space wrap>
         <Typography.Text type="secondary">
-          通过只代表内容合格；「待上架」里再点发布才会对用户可见。
+          {t("reviews.approve_only_note")}
         </Typography.Text>
         {state === "pending" && selected.length > 0 && (
           <>
             <span style={{ flex: 1 }} />
             <Button type="primary" onClick={() => decide(selected, "approve")}>
-              批量通过（{selected.length}）
+              {t("reviews.batch_approve", {v0: selected.length})}
             </Button>
             <Button danger onClick={() => openReject(selected)}>
-              批量驳回
+              {t("reviews.batch_reject")}
             </Button>
           </>
         )}
@@ -146,7 +147,7 @@ export default function Reviews() {
           setPage(1);
           setSelected([]);
         }}
-        items={TABS.map((tab) => ({
+        items={TABS().map((tab) => ({
           key: tab.key,
           label: `${tab.label}（${counts[tab.key as keyof typeof counts] ?? 0}）`,
         }))}
@@ -174,54 +175,54 @@ export default function Reviews() {
         }
         columns={[
           {
-            title: "剧集",
+            title: t("drama.drama"),
             dataIndex: "title",
             width: 240,
             render: (value: string, row) => (
               <div>
                 <Link to={`/dramas/${row.id}`}>{value}</Link>
                 {row.review_note && (
-                  <div style={{ fontSize: 12, color: "#A32D2D" }}>驳回：{row.review_note}</div>
+                  <div style={{ fontSize: 12, color: "#A32D2D" }}>{t("partnerdramas.rejected_note", {v0: row.review_note})}</div>
                 )}
               </div>
             ),
           },
           {
-            title: "供应商",
+            title: t("suppliers.supplier"),
             key: "supplier",
             width: 160,
             render: (_, row) => row.supplier?.name ?? "-",
           },
-          { title: "集数", dataIndex: "episode_count", width: 70 },
-          { title: "免费", dataIndex: "free_episode_count", width: 70 },
+          { title: t("episodespanel.episode_count"), dataIndex: "episode_count", width: 70 },
+          { title: t("dramas.free"), dataIndex: "free_episode_count", width: 70 },
           {
-            title: "提交时间",
+            title: t("reviews.submitted_at"),
             dataIndex: "submitted_at",
             width: 150,
             render: (value: string | null) => formatTime(value),
           },
           {
-            title: "状态",
+            title: t("common.status"),
             key: "state",
             width: 100,
             render: (_, row) =>
               state === "pending" ? (
-                <Tag color="orange">待审核</Tag>
+                <Tag color="orange">{t("common.pending_review")}</Tag>
               ) : state === "approved" ? (
-                <Tag color="blue">待上架</Tag>
+                <Tag color="blue">{t("partnerdramas.pending_publish")}</Tag>
               ) : (
-                <Tag color="red">已驳回</Tag>
+                <Tag color="red">{t("reviews.rejected")}</Tag>
               ),
           },
           {
-            title: "操作",
+            title: t("common.actions"),
             key: "actions",
             width: 190,
             render: (_, row) =>
               state === "pending" ? (
                 <Space size={4}>
                   <Button type="link" size="small" onClick={() => decide([row.id], "approve")}>
-                    通过
+                    {t("moderation.approve")}
                   </Button>
                   <Button
                     type="link"
@@ -229,30 +230,30 @@ export default function Reviews() {
                     danger
                     onClick={() => openReject([row.id])}
                   >
-                    驳回
+                    {t("reviews.reject")}
                   </Button>
-                  <Link to={`/dramas/${row.id}`}>查看</Link>
+                  <Link to={`/dramas/${row.id}`}>{t("reviews.view")}</Link>
                 </Space>
               ) : state === "approved" ? (
                 <Space size={4}>
                   <Button type="link" size="small" onClick={() => publish(row)}>
-                    上架
+                    {t("episodespanel.publish")}
                   </Button>
-                  <Link to={`/dramas/${row.id}`}>查看</Link>
+                  <Link to={`/dramas/${row.id}`}>{t("reviews.view")}</Link>
                 </Space>
               ) : (
-                <Link to={`/dramas/${row.id}`}>查看</Link>
+                <Link to={`/dramas/${row.id}`}>{t("reviews.view")}</Link>
               ),
           },
         ]}
       />
 
       <Modal
-        title={rejectIds.length > 1 ? `批量驳回 ${rejectIds.length} 部` : "驳回剧集"}
+        title={rejectIds.length > 1 ? t("reviews.batch_reject_title", {v0: rejectIds.length}) : t("reviews.reject_drama")}
         open={rejectOpen}
         onCancel={() => setRejectOpen(false)}
         onOk={() => form.submit()}
-        okText="确认驳回"
+        okText={t("reviews.confirm_reject")}
         okButtonProps={{ danger: true }}
         forceRender
       >
@@ -270,10 +271,10 @@ export default function Reviews() {
           }}
         >
           <Form.Item
-            label="驳回原因"
+            label={t("reviews.reject_reason")}
             name="note"
-            rules={[{ required: true, message: "请写清楚缺什么、怎么改" }]}
-            extra={rejectIds.length > 1 ? "这段原因会同时写入每一部剧" : undefined}
+            rules={[{ required: true, message: t("reviews.write_reject_reason") }]}
+            extra={rejectIds.length > 1 ? t("reviews.reason_applies_all") : undefined}
           >
             <Input.TextArea rows={4} maxLength={500} showCount />
           </Form.Item>

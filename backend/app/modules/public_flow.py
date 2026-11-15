@@ -59,7 +59,7 @@ def _tags_of(db: Session, drama_id: int) -> list[Tag]:
 
 
 def _episode_counts(db: Session, drama_ids: list[int]) -> dict[int, int]:
-    """Published episode count per drama: the "共 N 集" line on every card."""
+    """Published episode count per drama: the "N episodes in total" line on every card."""
     ids = [drama_id for drama_id in set(drama_ids) if drama_id]
     if not ids:
         return {}

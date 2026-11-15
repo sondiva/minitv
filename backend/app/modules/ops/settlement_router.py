@@ -10,6 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.i18n import t
 from app.modules.common.models import AuditLog
 from app.modules.ops import settlements as service
 from app.modules.ops.models import ROLE_ADMIN, ROLE_FINANCE, AdminUser, Supplier, SupplierSettlement
@@ -125,12 +126,12 @@ def change_status(
         raise HTTPException(status_code=404, detail="settlement not found")
     if body.status == "confirmed":
         if row.status != "draft":
-            raise HTTPException(status_code=409, detail="只有草稿可以确认")
+            raise HTTPException(status_code=409, detail=t("settlement.only_draft_confirm"))
         row.status = "confirmed"
         row.confirmed_at = datetime.now(timezone.utc)
     else:
         if row.status != "confirmed":
-            raise HTTPException(status_code=409, detail="请先确认对账单")
+            raise HTTPException(status_code=409, detail=t("settlement.confirm_first"))
         row.status = "paid"
         row.paid_at = datetime.now(timezone.utc)
     if body.note.strip():

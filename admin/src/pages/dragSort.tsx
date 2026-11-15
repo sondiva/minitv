@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Tooltip } from "antd";
 import { HolderOutlined, LockOutlined } from "@ant-design/icons";
+import { t } from "../copy";
 
 /** 首页运营 / 首页分组 / 组内剧 三处拖拽共用一套视觉语言。 */
 export const RED = "#e24b4a";
@@ -51,7 +52,7 @@ export function Handle({ locked, title, onArm }: { locked?: boolean; title?: str
   const [hovered, setHovered] = useState(false);
   if (locked) {
     return (
-      <Tooltip title="发现页固定第一位，不可移动">
+      <Tooltip title={t("dragsort.discover_pinned")}>
         <span style={{ ...HANDLE, cursor: "default" }}>
           <LockOutlined />
         </span>
@@ -59,7 +60,7 @@ export function Handle({ locked, title, onArm }: { locked?: boolean; title?: str
     );
   }
   return (
-    <Tooltip title={title ?? "按住拖动排序"}>
+    <Tooltip title={title ?? t("dragsort.drag_to_sort")}>
       <span
         onMouseDown={onArm}
         onMouseEnter={() => setHovered(true)}

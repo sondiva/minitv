@@ -16,6 +16,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.i18n import t
 from app.modules.ops import api_keys as service
 from app.modules.ops.models import STATUS_ACTIVE, AdminApiKey, AdminUser, ApiKeyEvent
 from app.modules.ops.router import require_admin, require_admin_role
@@ -85,7 +86,7 @@ def _get_or_404(db: Session, key_id: int) -> AdminApiKey:
     key = db.get(AdminApiKey, key_id)
     if key is None:
         raise HTTPException(
-            status_code=404, detail={"code": "key_not_found", "message": "密钥不存在"}
+            status_code=404, detail={"code": "key_not_found", "message": t("apikey.not_found")}
         )
     return key
 

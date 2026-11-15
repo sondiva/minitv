@@ -23,7 +23,7 @@ from app.modules.content.models import Drama, Episode, Tag
 
 router = APIRouter(prefix="/v1", tags=["public"])
 
-# "每个分类的前 7 个" - the website preview shows at most this many dramas per
+# "top 7 per category" - the website preview shows at most this many dramas per
 # category; everything beyond that cap is app-only.
 PREVIEW_LIMIT = 7
 

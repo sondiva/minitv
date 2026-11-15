@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -141,10 +143,14 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Locale persisted across launches.
+  /// Locale persisted across launches. A saved choice wins; with no saved
+  /// choice the device language decides (vi/zh/en), falling back to English.
   static Future<String> loadLocale() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_localeKey) == 'zh' ? 'zh' : 'en';
+    final saved = prefs.getString(_localeKey);
+    if (saved == 'zh' || saved == 'vi' || saved == 'en') return saved;
+    final code = ui.PlatformDispatcher.instance.locale.languageCode;
+    return (code == 'zh' || code == 'vi') ? code : 'en';
   }
 
   static Future<void> saveLocale(String locale) async {

@@ -18,6 +18,7 @@ import { api, errorText } from "../api";
 import { useConfirm } from "../confirm";
 import { formatTime, useLoad } from "../hooks";
 import { ROLE_LABELS, ROLE_OPTIONS, useIsAdmin, useMe } from "../me";
+import { t } from "../copy";
 
 type StaffRow = {
   id: number;
@@ -43,7 +44,7 @@ function randomPassword(length = 16): string {
 
 function roleTag(role: string) {
   const color = role === "admin" ? "red" : role === "ops" ? "blue" : "default";
-  return <Tag color={color}>{ROLE_LABELS[role] ?? role}</Tag>;
+  return <Tag color={color}>{ROLE_LABELS()[role] ?? role}</Tag>;
 }
 
 export default function Staff() {
@@ -80,7 +81,7 @@ export default function Staff() {
   const onCreate = async (values: any) => {
     try {
       await api("/admin/v1/staff", { method: "POST", body: JSON.stringify(values) });
-      message.success(`已创建账号 ${values.username}`);
+      message.success(t("staff.account_created", {v0: values.username}));
       setCreateOpen(false);
       await reload();
     } catch (e) {
@@ -104,7 +105,7 @@ export default function Staff() {
         method: "PATCH",
         body: JSON.stringify(values),
       });
-      message.success("已保存");
+      message.success(t("common.saved"));
       setEditing(null);
       await reload();
     } catch (e) {
@@ -127,9 +128,9 @@ export default function Staff() {
   const copyPassword = async () => {
     try {
       await navigator.clipboard.writeText(generated);
-      message.success("已复制");
+      message.success(t("stagepages.copied"));
     } catch {
-      message.error("复制失败，请手动选中复制");
+      message.error(t("staff.copy_failed"));
     }
   };
 
@@ -141,7 +142,7 @@ export default function Staff() {
         method: "POST",
         body: JSON.stringify({ new_password: generated }),
       });
-      message.success(`${resetTarget.username} 的密码已重置，对方需重新登录`);
+      message.success(t("staff.password_reset_done", {v0: resetTarget.username}));
       setResetTarget(null);
       await reload();
     } catch (e) {
@@ -169,7 +170,7 @@ export default function Staff() {
         method: "POST",
         body: JSON.stringify({ status: "disabled", reason: reason.trim() || null }),
       });
-      message.success(`${disableTarget.username} 已禁用`);
+      message.success(t("staff.account_disabled", {v0: disableTarget.username}));
       setDisableTarget(null);
       await reload();
     } catch (e) {
@@ -181,16 +182,16 @@ export default function Staff() {
 
   const onEnable = (row: StaffRow) => {
     confirm({
-      title: `启用账号 ${row.username}`,
-      content: "启用后该账号可以立即用原密码登录（若密码已被重置，请使用新密码）。",
-      okText: "启用",
+      title: t("staff.enable_account_title", {v0: row.username}),
+      content: t("staff.enable_account_note"),
+      okText: t("common.enable"),
       onOk: async () => {
         try {
           await api(`/admin/v1/staff/${row.id}/status`, {
             method: "POST",
             body: JSON.stringify({ status: "active" }),
           });
-          message.success("已启用");
+          message.success(t("staff.enabled"));
           await reload();
         } catch (e) {
           message.error(errorText(e));
@@ -205,8 +206,8 @@ export default function Staff() {
       <Alert
         type="warning"
         showIcon
-        message="仅管理员可访问账号管理"
-        description="当前账号没有管理员工账号的权限。如需开通或停用账号，请联系管理员。"
+        message={t("staff.admin_only")}
+        description={t("staff.no_permission")}
       />
     );
   }
@@ -215,11 +216,11 @@ export default function Staff() {
     <Space direction="vertical" style={{ width: "100%" }} size="middle">
       <Space wrap>
         <Button type="primary" onClick={openCreate}>
-          + 新增账号
+          {t("staff.add_account")}
         </Button>
         <Input.Search
           allowClear
-          placeholder="搜索账号 / 显示名"
+          placeholder={t("staff.search_account")}
           style={{ width: 220 }}
           onSearch={(value) => setQuery(value.trim())}
         />
@@ -227,20 +228,20 @@ export default function Staff() {
           value={roleFilter}
           style={{ width: 130 }}
           onChange={setRoleFilter}
-          options={[{ value: "", label: "全部角色" }, ...ROLE_OPTIONS]}
+          options={[{ value: "", label: t("staff.all_roles") }, ...ROLE_OPTIONS()]}
         />
         <Select
           value={statusFilter}
           style={{ width: 130 }}
           onChange={setStatusFilter}
           options={[
-            { value: "", label: "全部状态" },
-            { value: "active", label: "启用" },
-            { value: "disabled", label: "已禁用" },
+            { value: "", label: t("common.all_status") },
+            { value: "active", label: t("common.enable") },
+            { value: "disabled", label: t("staff.disabled_status") },
           ]}
         />
         <Typography.Text type="secondary">
-          共 {rows.length} 个账号 · 账号不可删除，只能禁用
+          {t("staff.total_accounts_note", {v0: rows.length})}
         </Typography.Text>
       </Space>
 
@@ -252,7 +253,7 @@ export default function Staff() {
         pagination={{ pageSize: 20, hideOnSinglePage: true }}
         columns={[
           {
-            title: "账号",
+            title: t("apikeys.account"),
             dataIndex: "username",
             width: 190,
             render: (value: string, row) => (
@@ -267,23 +268,23 @@ export default function Staff() {
             ),
           },
           {
-            title: "角色",
+            title: t("staff.role"),
             dataIndex: "role",
             width: 90,
             render: (value: string) => roleTag(value),
           },
           {
-            title: "状态",
+            title: t("common.status"),
             dataIndex: "status",
             width: 100,
             render: (value: string) => (
               <Tag color={value === "active" ? "green" : "default"}>
-                {value === "active" ? "启用" : "已禁用"}
+                {value === "active" ? t("common.enable") : t("staff.disabled_status")}
               </Tag>
             ),
           },
           {
-            title: "禁用原因",
+            title: t("staff.disable_reason"),
             dataIndex: "disable_reason",
             width: 170,
             render: (value: string | null) =>
@@ -298,19 +299,19 @@ export default function Staff() {
               ),
           },
           {
-            title: "最近登录",
+            title: t("staff.last_login"),
             dataIndex: "last_login_at",
             width: 150,
             render: (value: string | null) => formatTime(value),
           },
           {
-            title: "创建时间",
+            title: t("staff.created_at"),
             dataIndex: "created_at",
             width: 150,
             render: (value: string) => formatTime(value),
           },
           {
-            title: "操作",
+            title: t("common.actions"),
             key: "actions",
             width: 200,
             render: (_, row) => {
@@ -318,13 +319,13 @@ export default function Staff() {
               return (
                 <Space size={4}>
                   <Button type="link" size="small" onClick={() => openEdit(row)}>
-                    编辑
+                    {t("common.edit")}
                   </Button>
                   <Button type="link" size="small" onClick={() => openReset(row)}>
-                    重置密码
+                    {t("staff.reset_password")}
                   </Button>
                   {row.status === "active" ? (
-                    <Tooltip title={self ? "不能禁用自己" : ""}>
+                    <Tooltip title={self ? t("staff.cannot_disable_self") : ""}>
                       <Button
                         type="link"
                         size="small"
@@ -332,12 +333,12 @@ export default function Staff() {
                         disabled={self}
                         onClick={() => openDisable(row)}
                       >
-                        禁用
+                        {t("staff.disable")}
                       </Button>
                     </Tooltip>
                   ) : (
                     <Button type="link" size="small" onClick={() => onEnable(row)}>
-                      启用
+                      {t("common.enable")}
                     </Button>
                   )}
                 </Space>
@@ -348,50 +349,50 @@ export default function Staff() {
       />
 
       <Modal
-        title="新增账号"
+        title={t("staff.new_account")}
         open={createOpen}
         onCancel={() => setCreateOpen(false)}
         onOk={() => createForm.submit()}
-        okText="创建"
+        okText={t("staff.create")}
         forceRender
       >
         <Form form={createForm} layout="vertical" onFinish={onCreate} preserve={false}>
           <Form.Item
-            label="账号"
+            label={t("apikeys.account")}
             name="username"
-            extra="3–32 位小写字母、数字或 . _ -；创建后不可修改"
+            extra={t("staff.username_rule_note")}
             rules={[
-              { required: true, message: "请输入账号" },
+              { required: true, message: t("staff.enter_account") },
               {
                 pattern: /^[a-z0-9][a-z0-9._-]{2,31}$/,
-                message: "3–32 位小写字母、数字或 . _ -",
+                message: t("staff.username_rule"),
               },
             ]}
           >
-            <Input placeholder="如 ops-lily" autoComplete="off" />
+            <Input placeholder={t("staff.username_example")} autoComplete="off" />
           </Form.Item>
-          <Form.Item label="显示名" name="display_name">
-            <Input maxLength={64} placeholder="如 李莉" />
+          <Form.Item label={t("staff.display_name")} name="display_name">
+            <Input maxLength={64} placeholder={t("staff.display_name_example")} />
           </Form.Item>
-          <Form.Item label="角色" name="role" rules={[{ required: true }]}>
-            <Select options={ROLE_OPTIONS} />
+          <Form.Item label={t("staff.role")} name="role" rules={[{ required: true }]}>
+            <Select options={ROLE_OPTIONS()} />
           </Form.Item>
           <Form.Item
-            label="初始密码"
+            label={t("staff.initial_password")}
             name="password"
             extra={
               <span>
-                建议使用随机口令，并通过安全渠道告知本人 ·{" "}
+                {t("staff.random_password_hint")}{" "}
                 <Typography.Link
                   onClick={() => createForm.setFieldValue("password", randomPassword())}
                 >
-                  生成随机口令
+                  {t("staff.generate_password")}
                 </Typography.Link>
               </span>
             }
             rules={[
-              { required: true, message: "请输入初始密码" },
-              { min: 8, message: "至少 8 位" },
+              { required: true, message: t("staff.enter_initial_password") },
+              { min: 8, message: t("staff.password_min_length") },
             ]}
           >
             <Input autoComplete="new-password" />
@@ -400,36 +401,36 @@ export default function Staff() {
       </Modal>
 
       <Modal
-        title={editing ? `编辑账号：${editing.username}` : "编辑账号"}
+        title={editing ? t("staff.edit_account_title", {v0: editing.username}) : t("staff.edit_account")}
         open={editing !== null}
         onCancel={() => setEditing(null)}
         onOk={() => editForm.submit()}
-        okText="保存"
+        okText={t("common.save")}
         forceRender
       >
         <Form form={editForm} layout="vertical" onFinish={onEdit} preserve={false}>
-          <Form.Item label="显示名" name="display_name">
+          <Form.Item label={t("staff.display_name")} name="display_name">
             <Input maxLength={64} />
           </Form.Item>
           <Form.Item
-            label="角色"
+            label={t("staff.role")}
             name="role"
-            extra={editing?.id === me?.id ? "不能修改自己的角色" : undefined}
+            extra={editing?.id === me?.id ? t("staff.cannot_change_own_role") : undefined}
             rules={[{ required: true }]}
           >
-            <Select options={ROLE_OPTIONS} disabled={editing?.id === me?.id} />
+            <Select options={ROLE_OPTIONS()} disabled={editing?.id === me?.id} />
           </Form.Item>
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            账号（用户名）创建后不可修改；改角色只影响写权限，不影响已登录会话。
+            {t("staff.account_note")}
           </Typography.Text>
         </Form>
       </Modal>
 
       <Modal
-        title={resetTarget ? `重置密码：${resetTarget.display_name || resetTarget.username}` : "重置密码"}
+        title={resetTarget ? t("staff.reset_password_title", {v0: resetTarget.display_name || resetTarget.username}) : t("staff.reset_password")}
         open={resetTarget !== null}
         onCancel={() => setResetTarget(null)}
-        okText="确认重置"
+        okText={t("staff.confirm_reset")}
         okButtonProps={{ danger: true, disabled: !acknowledged, loading: resetting }}
         onOk={onReset}
         destroyOnHidden
@@ -438,8 +439,8 @@ export default function Staff() {
           <Alert
             type="warning"
             showIcon
-            message="重置后该账号所有已登录会话立即失效"
-            description="对方需要用下面的新口令重新登录，原密码同时作废。"
+            message={t("staff.reset_sessions_note")}
+            description={t("staff.new_password_note")}
           />
           <Space.Compact style={{ width: "100%" }}>
             <Input
@@ -448,23 +449,23 @@ export default function Staff() {
               style={{ fontFamily: "monospace" }}
               onFocus={(e) => e.target.select()}
             />
-            <Button onClick={copyPassword}>复制</Button>
-            <Button onClick={() => setGenerated(randomPassword())}>重新生成</Button>
+            <Button onClick={copyPassword}>{t("apikeys.copy")}</Button>
+            <Button onClick={() => setGenerated(randomPassword())}>{t("staff.regenerate")}</Button>
           </Space.Compact>
           <Checkbox
             checked={acknowledged}
             onChange={(e) => setAcknowledged(e.target.checked)}
           >
-            我已通过安全渠道把新口令告知本人
+            {t("staff.password_shared_confirm")}
           </Checkbox>
         </Space>
       </Modal>
 
       <Modal
-        title={disableTarget ? `禁用账号：${disableTarget.username}` : "禁用账号"}
+        title={disableTarget ? t("staff.disable_account_title", {v0: disableTarget.username}) : t("staff.disable_account")}
         open={disableTarget !== null}
         onCancel={() => setDisableTarget(null)}
-        okText="确认禁用"
+        okText={t("staff.confirm_disable")}
         okButtonProps={{ danger: true, loading: disabling }}
         onOk={onDisable}
         destroyOnHidden
@@ -473,18 +474,18 @@ export default function Staff() {
           <Alert
             type="warning"
             showIcon
-            message="该账号已登录的会话会立即失效"
-            description="历史操作记录保留，账号不会被删除，随时可以重新启用。"
+            message={t("staff.sessions_invalid")}
+            description={t("staff.disable_history_note")}
           />
           <div style={{ marginBottom: 12 }}>
-            <div style={{ marginBottom: 6, fontSize: 13 }}>禁用原因（可选）</div>
+            <div style={{ marginBottom: 6, fontSize: 13 }}>{t("staff.disable_reason_optional")}</div>
             <Input.TextArea
               rows={3}
               maxLength={200}
               showCount
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="如：离职 2026-10-21；或临时停用待核查"
+              placeholder={t("staff.disable_reason_example")}
             />
           </div>
         </Space>

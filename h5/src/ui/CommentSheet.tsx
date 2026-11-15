@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { createComment, listComments, postJson } from "../api";
 import { useAuth } from "../auth/AuthProvider";
 import type { Locale } from "../copy";
-import { t } from "../copy";
+import { dateLocale, t } from "../copy";
 import { formatCount } from "../format";
 import { IMG, thumb } from "../img";
 import { IconClose, IconHeart } from "../icons";
@@ -28,7 +28,7 @@ function timeAgo(iso: string | null, locale: Locale): string {
   if (seconds < 3600) return t(locale, "minutes_ago", { n: Math.floor(seconds / 60) });
   if (seconds < 86400) return t(locale, "hours_ago", { n: Math.floor(seconds / 3600) });
   if (seconds < 604800) return t(locale, "days_ago", { n: Math.floor(seconds / 86400) });
-  return new Date(iso).toLocaleDateString();
+  return new Date(iso).toLocaleDateString(dateLocale(locale));
 }
 
 /** One thread per episode: opening a different episode remounts the sheet. */

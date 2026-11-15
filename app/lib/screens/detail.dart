@@ -91,7 +91,6 @@ class _DetailScreenState extends State<DetailScreen> {
   bool _member = false;
   bool _started = false;
 
-  bool get zh => widget.language == 'zh';
   Copy get copy => Copy(widget.language);
 
   @override
@@ -384,8 +383,8 @@ class _DetailScreenState extends State<DetailScreen> {
             right: 6,
             bottom: 150,
             child: _ActionRail(
-              likes: formatCount(likeCount, zh: zh),
-              comments: commentCount > 0 ? formatCount(commentCount, zh: zh) : copy.t('comment'),
+              likes: formatCount(likeCount, locale: widget.language),
+              comments: commentCount > 0 ? formatCount(commentCount, locale: widget.language) : copy.t('comment'),
               favorite: copy.t('favorite'),
               liked: liked,
               favorited: favorited,
@@ -972,9 +971,9 @@ class _PlaybackSettingsSheetState extends State<_PlaybackSettingsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final zh = widget.language == 'zh';
+    final copy = Copy(widget.language);
     final qualities = ['auto', ...widget.renditions];
-    String qualityLabel(String value) => value == 'auto' ? (zh ? '自动' : 'Auto') : value;
+    String qualityLabel(String value) => value == 'auto' ? copy.t('auto_quality') : value;
     String speedLabel(double value) => value == 1.0 ? '1.0x' : '${value}x';
 
     return GestureDetector(
@@ -1007,12 +1006,12 @@ class _PlaybackSettingsSheetState extends State<_PlaybackSettingsSheet> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        zh ? '播放设置' : 'Playback',
+                        copy.t('playback_settings'),
                         style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 16),
                       _SettingRow(
-                        label: zh ? '倍速' : 'Speed',
+                        label: copy.t('speed'),
                         options: [for (final value in speeds) (value: '$value', label: speedLabel(value))],
                         selected: '$speed',
                         onPick: (value) {
@@ -1023,7 +1022,7 @@ class _PlaybackSettingsSheetState extends State<_PlaybackSettingsSheet> {
                       ),
                       const SizedBox(height: 16),
                       _SettingRow(
-                        label: zh ? '清晰度' : 'Quality',
+                        label: copy.t('quality'),
                         options: [for (final value in qualities) (value: value, label: qualityLabel(value))],
                         selected: qualities.contains(quality) ? quality : 'auto',
                         onPick: (value) {
@@ -1033,7 +1032,7 @@ class _PlaybackSettingsSheetState extends State<_PlaybackSettingsSheet> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        zh ? '自动会跟随网速切换；选定后固定该清晰度。' : 'Auto adapts to your network; picking one pins that quality.',
+                        copy.t('quality_auto_hint'),
                         style: const TextStyle(color: Colors.white38, fontSize: 11),
                       ),
                     ],

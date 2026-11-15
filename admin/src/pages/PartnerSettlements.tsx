@@ -1,5 +1,6 @@
 import { Space, Table, Tag, Typography } from "antd";
 import { formatTime, useLoad } from "../hooks";
+import { t } from "../copy";
 
 type SettlementRow = {
   id: number;
@@ -14,11 +15,11 @@ type SettlementRow = {
   paid_at: string | null;
 };
 
-const STATUS: Record<string, { text: string; color?: string }> = {
-  draft: { text: "待确认", color: "orange" },
-  confirmed: { text: "已确认", color: "blue" },
-  paid: { text: "已打款", color: "green" },
-};
+function STATUS(): Record<string, { text: string; color?: string }> { return {
+  draft: { text: t("settlements.pending_confirm"), color: "orange" },
+  confirmed: { text: t("settlements.confirmed"), color: "blue" },
+  paid: { text: t("settlements.paid"), color: "green" },
+};; }
 
 const money = (cents: number, currency = "USD") =>
   `${currency === "USD" ? "$" : ""}${(cents / 100).toFixed(2)}`;
@@ -31,7 +32,7 @@ export default function PartnerSettlements() {
   return (
     <Space direction="vertical" style={{ width: "100%" }} size="middle">
       <Typography.Text type="secondary">
-        自然月结算，次月出对账单；分成按每笔订单支付时生效的比例计算。
+        {t("partnersettlements.settlement_cycle_note")}
       </Typography.Text>
       <Table<SettlementRow>
         rowKey="id"
@@ -39,39 +40,39 @@ export default function PartnerSettlements() {
         dataSource={data.items}
         pagination={false}
         columns={[
-          { title: "月份", dataIndex: "month", width: 110 },
+          { title: t("settlements.month"), dataIndex: "month", width: 110 },
           {
-            title: "首单金额",
+            title: t("settlements.first_order_amount"),
             dataIndex: "gross_cents",
             width: 120,
             render: (value: number, row) => money(value, row.currency),
           },
           {
-            title: "分成比例",
+            title: t("partnersettlements.revenue_share_ratio"),
             dataIndex: "effective_share_bps",
             width: 100,
             render: (value: number) => `${(value / 100).toFixed(2)}%`,
           },
           {
-            title: "应结金额",
+            title: t("settlements.payable_amount"),
             dataIndex: "revenue_cents",
             width: 120,
             render: (value: number, row) => (
               <Typography.Text strong>{money(value, row.currency)}</Typography.Text>
             ),
           },
-          { title: "订单数", dataIndex: "order_count", width: 80 },
+          { title: t("settlements.order_count"), dataIndex: "order_count", width: 80 },
           {
-            title: "状态",
+            title: t("common.status"),
             dataIndex: "status",
             width: 100,
             render: (value: string) => {
-              const meta = STATUS[value] ?? { text: value };
+              const meta = STATUS()[value] ?? { text: value };
               return <Tag color={meta.color}>{meta.text}</Tag>;
             },
           },
           {
-            title: "确认 / 打款",
+            title: t("settlements.confirm_or_pay"),
             key: "dates",
             width: 200,
             render: (_, row) => (

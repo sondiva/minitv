@@ -18,6 +18,7 @@ import { api, errorText } from "../api";
 import { useConfirm } from "../confirm";
 import { formatTime, useLoad } from "../hooks";
 import { ROLE_LABELS } from "../me";
+import { t } from "../copy";
 
 type KeyState = "active" | "expiring" | "expired" | "revoked";
 
@@ -48,28 +49,28 @@ type Summary = {
 
 type StaffRow = { id: number; username: string; display_name: string; role: string; status: string };
 
-const SCOPE_LABELS: Record<string, string> = {
-  read: "读",
-  write: "写",
-  delete: "删除",
-  billing: "财务",
-  staff: "账号",
-};
+function SCOPE_LABELS(): Record<string, string> { return {
+  read: t("apikeys.scope_read"),
+  write: t("apikeys.scope_write"),
+  delete: t("common.delete"),
+  billing: t("apikeys.finance_role"),
+  staff: t("apikeys.account"),
+};; }
 
 /** Only the first three are offered here; billing/staff stay admin-session-only. */
-const SCOPE_OPTIONS = [
-  { value: "read", label: "读：查询剧集、分集、上传状态" },
-  { value: "write", label: "写：建剧、改剧、上传、发布" },
-  { value: "delete", label: "删除：删剧（高危）" },
-];
+function SCOPE_OPTIONS(){ return [
+  { value: "read", label: t("apikeys.scope_read_desc") },
+  { value: "write", label: t("apikeys.scope_write_full") },
+  { value: "delete", label: t("apikeys.scope_delete") },
+];; }
 
-const TTL_OPTIONS = [
-  { value: 30, label: "30 天" },
-  { value: 90, label: "90 天" },
-  { value: 180, label: "180 天" },
-  { value: 365, label: "365 天" },
-  { value: 0, label: "长期（不推荐）" },
-];
+function TTL_OPTIONS(){ return [
+  { value: 30, label: t("apikeys.duration_30_days") },
+  { value: 90, label: t("apikeys.days_90") },
+  { value: 180, label: t("apikeys.days_180") },
+  { value: 365, label: t("apikeys.duration_365_days") },
+  { value: 0, label: t("apikeys.long_term_not_recommended") },
+];; }
 
 /** One source of truth for the copy-paste commands (see docs/cli-execution-plan.md §3.7). */
 const CLI_INSTALL = "curl -fsSL https://minitv.us/cli/install.sh | sh";
@@ -78,16 +79,16 @@ const CLI_DOCTOR = "minitv doctor";
 const cliOneLiner = (key: string) =>
   `curl -fsSL https://minitv.us/cli/install.sh | MINITV_API_KEY='${key}' sh`;
 
-const STATE_TAG: Record<KeyState, { color: string; label: string }> = {
-  active: { color: "green", label: "有效" },
-  expiring: { color: "orange", label: "即将到期" },
-  expired: { color: "red", label: "已过期" },
-  revoked: { color: "default", label: "已撤销" },
-};
+function STATE_TAG(): Record<KeyState, { color: string; label: string }> { return {
+  active: { color: "green", label: t("common.active") },
+  expiring: { color: "orange", label: t("apikeys.expiring_soon") },
+  expired: { color: "red", label: t("apikeys.expired") },
+  revoked: { color: "default", label: t("common.revoked") },
+};; }
 
 function scopeText(scopes: string[]): string {
-  if (!scopes.length) return "跟随角色";
-  return scopes.map((scope) => SCOPE_LABELS[scope] ?? scope).join(" · ");
+  if (!scopes.length) return t("apikeys.follow_role");
+  return scopes.map((scope) => SCOPE_LABELS()[scope] ?? scope).join(" · ");
 }
 
 export default function ApiKeys() {
@@ -129,7 +130,7 @@ export default function ApiKeys() {
         .filter((row) => row.status === "active")
         .map((row) => ({
           value: row.id,
-          label: `${row.username}（${ROLE_LABELS[row.role] ?? row.role}）`,
+          label: `${row.username}（${ROLE_LABELS()[row.role] ?? row.role}）`,
         })),
     [staff.data.items]
   );
@@ -171,7 +172,7 @@ export default function ApiKeys() {
       });
       setEditing(null);
       reload();
-      message.success("已保存");
+      message.success(t("common.saved"));
     } catch (e) {
       message.error(errorText(e));
     }
@@ -179,9 +180,9 @@ export default function ApiKeys() {
 
   const onRotate = (row: KeyRow) => {
     confirm({
-      title: `轮换密钥 ${row.name}`,
-      content: "旧密钥会立即失效，正在使用它的自动化会中断。",
-      okText: "轮换",
+      title: t("apikeys.rotate_key_title", {v0: row.name}),
+      content: t("apikeys.old_key_expires_warn"),
+      okText: t("apikeys.rotate"),
       onOk: async () => {
         try {
           const fresh = await api<KeyRow & { key: string }>(
@@ -200,9 +201,9 @@ export default function ApiKeys() {
 
   const onRevoke = (row: KeyRow) => {
     confirm({
-      title: `撤销密钥 ${row.name}`,
-      content: "撤销后立即失效且不可恢复；需要继续使用请新建或轮换。",
-      okText: "撤销",
+      title: t("apikeys.revoke_key_title", {v0: row.name}),
+      content: t("apikeys.revoke_irreversible"),
+      okText: t("apikeys.revoke"),
       danger: true,
       onOk: async () => {
         try {
@@ -211,7 +212,7 @@ export default function ApiKeys() {
             body: JSON.stringify({}),
           });
           reload();
-          message.success("已撤销");
+          message.success(t("common.revoked"));
         } catch (e) {
           message.error(errorText(e));
           throw e;
@@ -222,15 +223,15 @@ export default function ApiKeys() {
 
   const onDelete = (row: KeyRow) => {
     confirm({
-      title: `删除密钥 ${row.name}`,
-      content: "仅从未使用过的密钥可以删除。",
-      okText: "删除",
+      title: t("apikeys.delete_key_title", {v0: row.name}),
+      content: t("apikeys.delete_unused_only"),
+      okText: t("common.delete"),
       danger: true,
       onOk: async () => {
         try {
           await api(`/admin/v1/api-keys/${row.id}`, { method: "DELETE" });
           reload();
-          message.success("已删除");
+          message.success(t("common.deleted"));
         } catch (e) {
           message.error(errorText(e));
           throw e;
@@ -242,9 +243,9 @@ export default function ApiKeys() {
   const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      message.success("已复制");
+      message.success(t("stagepages.copied"));
     } catch {
-      message.warning("复制失败，请手动选中");
+      message.warning(t("apikeys.copy_failed_manual"));
     }
   };
 
@@ -256,7 +257,7 @@ export default function ApiKeys() {
         <Space wrap size={8}>
           <Input.Search
             allowClear
-            placeholder="搜索名称 / 前缀 / 账号"
+            placeholder={t("apikeys.search_keys")}
             style={{ width: 260 }}
             onSearch={setQuery}
           />
@@ -265,23 +266,23 @@ export default function ApiKeys() {
             value={stateFilter}
             onChange={setStateFilter}
             options={[
-              { value: "", label: "全部状态" },
-              { value: "active", label: "有效" },
-              { value: "expiring", label: "即将到期" },
-              { value: "expired", label: "已过期" },
-              { value: "revoked", label: "已撤销" },
+              { value: "", label: t("common.all_status") },
+              { value: "active", label: t("common.active") },
+              { value: "expiring", label: t("apikeys.expiring_soon") },
+              { value: "expired", label: t("apikeys.expired") },
+              { value: "revoked", label: t("common.revoked") },
             ]}
           />
-          <Tag color="green">有效 {data.summary.active}</Tag>
-          {data.summary.expiring > 0 && <Tag color="orange">即将到期 {data.summary.expiring}</Tag>}
-          {data.summary.expired > 0 && <Tag color="red">已过期 {data.summary.expired}</Tag>}
-          {data.summary.revoked > 0 && <Tag>已撤销 {data.summary.revoked}</Tag>}
+          <Tag color="green">{t("common.active")} {data.summary.active}</Tag>
+          {data.summary.expiring > 0 && <Tag color="orange">{t("apikeys.expiring_soon")} {data.summary.expiring}</Tag>}
+          {data.summary.expired > 0 && <Tag color="red">{t("apikeys.expired")} {data.summary.expired}</Tag>}
+          {data.summary.revoked > 0 && <Tag>{t("common.revoked")} {data.summary.revoked}</Tag>}
         </Space>
         <Space>
-          <Button onClick={() => setAgentOpen(true)}>接入 Agent</Button>
-          <Button onClick={() => reload()}>刷新</Button>
+          <Button onClick={() => setAgentOpen(true)}>{t("apikeys.connect_agent")}</Button>
+          <Button onClick={() => reload()}>{t("common.refresh")}</Button>
           <Button type="primary" onClick={() => setCreateOpen(true)}>
-            新建密钥
+            {t("apikeys.create_key")}
           </Button>
         </Space>
       </Space>
@@ -289,7 +290,7 @@ export default function ApiKeys() {
       <Alert
         type="info"
         showIcon
-        message="密钥只在创建或轮换时显示一次，之后只能看到前缀。密钥的权限永远不会超过其绑定账号的角色。"
+        message={t("apikeys.key_shown_once_note")}
       />
 
       <Table<KeyRow>
@@ -300,20 +301,20 @@ export default function ApiKeys() {
         pagination={{ pageSize: 20, hideOnSinglePage: true }}
         columns={[
           {
-            title: "名称",
+            title: t("common.name"),
             dataIndex: "name",
             width: 210,
             render: (value: string, row) => (
               <div>
                 <Typography.Text>{value}</Typography.Text>
                 <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)" }}>
-                  {row.last_used_at ? `最近使用 ${formatTime(row.last_used_at)}` : "从未使用"}
+                  {row.last_used_at ? t("apikeys.last_used", {v0: formatTime(row.last_used_at)}) : t("apikeys.never_used")}
                 </div>
               </div>
             ),
           },
           {
-            title: "绑定账号",
+            title: t("apikeys.bind_account"),
             dataIndex: "username",
             width: 190,
             render: (value: string | null, row) => (
@@ -328,13 +329,13 @@ export default function ApiKeys() {
             ),
           },
           {
-            title: "前缀",
+            title: t("apikeys.prefix"),
             dataIndex: "key_prefix",
             width: 170,
             render: (value: string) => <Typography.Text code>{value}</Typography.Text>,
           },
           {
-            title: "权限",
+            title: t("common.permission"),
             dataIndex: "scopes",
             width: 130,
             render: (value: string[]) => (
@@ -347,22 +348,22 @@ export default function ApiKeys() {
             ),
           },
           {
-            title: "状态",
+            title: t("common.status"),
             dataIndex: "state",
             width: 100,
             render: (value: KeyState) => (
-              <Tag color={STATE_TAG[value].color}>{STATE_TAG[value].label}</Tag>
+              <Tag color={STATE_TAG()[value].color}>{STATE_TAG()[value].label}</Tag>
             ),
           },
           {
-            title: "到期",
+            title: t("apikeys.expires"),
             dataIndex: "expires_at",
             width: 150,
             render: (value: string | null) =>
-              value ? formatTime(value) : <Typography.Text type="secondary">长期</Typography.Text>,
+              value ? formatTime(value) : <Typography.Text type="secondary">{t("apikeys.long_term")}</Typography.Text>,
           },
           {
-            title: "操作",
+            title: t("common.actions"),
             key: "actions",
             width: 210,
             render: (_, row) => {
@@ -378,16 +379,16 @@ export default function ApiKeys() {
                       editForm.setFieldsValue({ name: row.name, scopes: row.scopes });
                     }}
                   >
-                    编辑
+                    {t("common.edit")}
                   </Button>
-                  <Tooltip title={revoked ? "已撤销，请新建" : ""}>
+                  <Tooltip title={revoked ? t("apikeys.revoked_create_new") : ""}>
                     <Button
                       type="link"
                       size="small"
                       disabled={revoked}
                       onClick={() => onRotate(row)}
                     >
-                      轮换
+                      {t("apikeys.rotate")}
                     </Button>
                   </Tooltip>
                   <Button
@@ -397,9 +398,9 @@ export default function ApiKeys() {
                     disabled={revoked}
                     onClick={() => onRevoke(row)}
                   >
-                    撤销
+                    {t("apikeys.revoke")}
                   </Button>
-                  <Tooltip title={row.last_used_at ? "已使用过，只能撤销" : ""}>
+                  <Tooltip title={row.last_used_at ? t("apikeys.used_only_revoke") : ""}>
                     <Button
                       type="link"
                       size="small"
@@ -407,7 +408,7 @@ export default function ApiKeys() {
                       disabled={row.last_used_at !== null}
                       onClick={() => onDelete(row)}
                     >
-                      删除
+                      {t("common.delete")}
                     </Button>
                   </Tooltip>
                 </Space>
@@ -418,15 +419,15 @@ export default function ApiKeys() {
       />
 
       <Typography.Text type="secondary">
-        共 {data.total} 把密钥 · 明文只在签发时出现一次，之后只能看到前缀
+        {t("apikeys.total_keys_note", {v0: data.total})}
       </Typography.Text>
 
       <Modal
-        title="新建密钥"
+        title={t("apikeys.create_key")}
         open={createOpen}
         onCancel={() => setCreateOpen(false)}
         onOk={() => createForm.submit()}
-        okText="签发"
+        okText={t("apikeys.issue")}
         forceRender
         afterClose={() => {
           if (pendingSecret) {
@@ -443,63 +444,63 @@ export default function ApiKeys() {
           initialValues={{ scopes: ["read", "write"], expires_in_days: 90 }}
         >
           <Form.Item
-            label="绑定账号"
+            label={t("apikeys.bind_account")}
             name="user_id"
-            extra="密钥的权限不会超过该账号的角色；账号被禁用时密钥立即失效"
-            rules={[{ required: true, message: "请选择账号" }]}
+            extra={t("apikeys.key_permission_limit")}
+            rules={[{ required: true, message: t("apikeys.select_account") }]}
           >
             <Select
               showSearch
               optionFilterProp="label"
-              placeholder="选择 staff 账号"
+              placeholder={t("apikeys.select_staff_account")}
               options={staffOptions}
             />
           </Form.Item>
           <Form.Item
-            label="名称"
+            label={t("common.name")}
             name="name"
-            extra="同一账号下不能重名，建议写成 用途/实例"
-            rules={[{ required: true, message: "请输入名称" }]}
+            extra={t("apikeys.no_duplicate_name_hint")}
+            rules={[{ required: true, message: t("apikeys.enter_name") }]}
           >
-            <Input maxLength={64} placeholder="如 agent-ops/upload-bot" />
+            <Input maxLength={64} placeholder={t("apikeys.name_example")} />
           </Form.Item>
-          <Form.Item label="权限" name="scopes" rules={[{ required: true }]}>
-            <Checkbox.Group options={SCOPE_OPTIONS} style={{ display: "grid", gap: 6 }} />
+          <Form.Item label={t("common.permission")} name="scopes" rules={[{ required: true }]}>
+            <Checkbox.Group options={SCOPE_OPTIONS()} style={{ display: "grid", gap: 6 }} />
           </Form.Item>
-          <Form.Item label="有效期" name="expires_in_days">
-            <Select options={TTL_OPTIONS} />
+          <Form.Item label={t("apikeys.validity_period")} name="expires_in_days">
+            <Select options={TTL_OPTIONS()} />
           </Form.Item>
         </Form>
       </Modal>
 
       <Modal
-        title="编辑密钥"
+        title={t("apikeys.edit_key")}
         open={editing !== null}
         onCancel={() => setEditing(null)}
         onOk={() => editForm.submit()}
-        okText="保存"
+        okText={t("common.save")}
         forceRender
       >
         <Form form={editForm} layout="vertical" onFinish={onEdit}>
-          <Form.Item label="名称" name="name" rules={[{ required: true }]}>
+          <Form.Item label={t("common.name")} name="name" rules={[{ required: true }]}>
             <Input maxLength={64} />
           </Form.Item>
-          <Form.Item label="权限" name="scopes" rules={[{ required: true }]}>
-            <Checkbox.Group options={SCOPE_OPTIONS} style={{ display: "grid", gap: 6 }} />
+          <Form.Item label={t("common.permission")} name="scopes" rules={[{ required: true }]}>
+            <Checkbox.Group options={SCOPE_OPTIONS()} style={{ display: "grid", gap: 6 }} />
           </Form.Item>
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            到期时间不能在这里改；需要延长请轮换。
+            {t("apikeys.expiry_cannot_change")}
           </Typography.Text>
         </Form>
       </Modal>
 
       <Modal
-        title="密钥已生成"
+        title={t("apikeys.key_generated")}
         open={secret !== null}
         onCancel={() => setSecret(null)}
         footer={
           <Button type="primary" onClick={() => setSecret(null)}>
-            我已保存
+            {t("apikeys.i_saved")}
           </Button>
         }
         maskClosable={false}
@@ -509,7 +510,7 @@ export default function ApiKeys() {
           type="warning"
           showIcon
           style={{ marginBottom: 12 }}
-          message="只显示这一次。关闭后无法再次查看，遗失请轮换。"
+          message={t("apikeys.shown_once_only")}
         />
         <Input.TextArea
           readOnly
@@ -519,14 +520,18 @@ export default function ApiKeys() {
         />
         <Space style={{ marginTop: 12, justifyContent: "space-between", width: "100%" }}>
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            {secret ? `到期 ${secret.expires_at ? formatTime(secret.expires_at) : "长期"}` : ""}
+            {secret
+              ? t("apikeys.expires_value", {
+                  v0: secret.expires_at ? formatTime(secret.expires_at) : t("apikeys.long_term"),
+                })
+              : ""}
           </Typography.Text>
-          <Button onClick={copySecret}>复制</Button>
+          <Button onClick={copySecret}>{t("apikeys.copy")}</Button>
         </Space>
 
         <div style={{ marginTop: 16 }}>
           <div style={{ fontSize: 12, color: "rgba(0,0,0,0.65)", marginBottom: 6 }}>
-            复制给 Agent 的一键命令（安装 CLI + 写入密钥 + 自检）
+            {t("apikeys.copy_oneclick_command")}
           </div>
           <div
             style={{
@@ -551,45 +556,45 @@ export default function ApiKeys() {
               }}
             >
               <span style={{ fontSize: 11, color: "#a32d2d" }}>
-                命令含密钥，勿截图或粘贴到公开渠道
+                {t("apikeys.command_contains_key")}
               </span>
               <Button size="small" onClick={() => copy(cliOneLiner(secret?.key ?? ""))}>
-                复制命令
+                {t("apikeys.copy_command")}
               </Button>
             </div>
           </div>
           <Typography.Text type="secondary" style={{ fontSize: 11, display: "block", marginTop: 6 }}>
-            密钥经环境变量传入、在安装脚本内部走 stdin，不会出现在进程列表；执行方的 shell 历史仍会留下这条命令。
+            {t("apikeys.key_env_stdin_note")}
           </Typography.Text>
         </div>
       </Modal>
 
       <Modal
-        title="接入 Agent"
+        title={t("apikeys.connect_agent")}
         open={agentOpen}
         onCancel={() => setAgentOpen(false)}
         footer={null}
         width={620}
       >
         <Typography.Paragraph type="secondary" style={{ fontSize: 13 }}>
-          三步把命令行交给 Agent。装完后它能查剧、导数据，权限不超过这把密钥。
+          {t("apikeys.three_steps_agent")}
         </Typography.Paragraph>
 
         {[
           {
-            title: "① 安装 CLI",
+            title: t("apikeys.step_install_cli"),
             code: CLI_INSTALL,
-            hint: "装到 ~/.local/bin/minitv，需要 python3 ≥ 3.8；重复执行即升级。",
+            hint: t("apikeys.install_cli_hint"),
           },
           {
-            title: "② 设置 API Key",
+            title: t("apikeys.step_set_key"),
             code: CLI_SET_KEY,
-            hint: "隐藏输入、先校验再落盘；也可 echo \"$KEY\" | minitv config set-key --stdin。",
+            hint: t("apikeys.set_key_hint"),
           },
           {
-            title: "③ 自检",
+            title: t("apikeys.step_self_check"),
             code: CLI_DOCTOR,
-            hint: "连不上会说清是网络、密钥还是权限问题。",
+            hint: t("apikeys.self_check_hint"),
           },
         ].map((step) => (
           <div key={step.title} style={{ marginBottom: 16 }}>
@@ -612,7 +617,7 @@ export default function ApiKeys() {
                 {step.code}
               </Typography.Text>
               <Button size="small" onClick={() => copy(step.code)}>
-                复制
+                {t("apikeys.copy")}
               </Button>
             </div>
             <Typography.Text type="secondary" style={{ fontSize: 11 }}>
@@ -622,7 +627,7 @@ export default function ApiKeys() {
         ))}
 
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-          已有密钥时按上面三步手工做一次即可；想把密钥一起交给 Agent，就在新建密钥成功后复制弹窗里的「一键命令」。
+          {t("apikeys.existing_key_steps")}
         </Typography.Text>
       </Modal>
 

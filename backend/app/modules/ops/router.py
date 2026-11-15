@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.i18n import t
 from app.modules.common.models import AuditLog
 from app.modules.content.models import Drama, DramaTag, Episode, Tag
 from app.modules.ops import api_keys as api_key_service
@@ -42,20 +43,15 @@ def _bearer_token(request: Request) -> str:
     if not auth.startswith("Bearer "):
         raise HTTPException(
             status_code=401,
-            detail={"code": "missing_credential", "message": "缺少 Authorization 头"},
+            detail={"code": "missing_credential", "message": t("auth.missing_credential")},
             headers={"WWW-Authenticate": "Bearer"},
         )
     return auth[len("Bearer "):]
 
 
-SESSION_STORE_503_DETAIL = (
-    "会话存储不可用（Redis 未连接）。请先启动 minitv-redis："
-    "在仓库根目录执行 docker compose up -d，然后重试。"
-)
-
-
 def _session_store_503() -> HTTPException:
-    return HTTPException(status_code=503, detail=SESSION_STORE_503_DETAIL)
+    # Localised at call time (inside a request) so Accept-Language applies.
+    return HTTPException(status_code=503, detail=t("auth.session_store_unavailable"))
 
 
 def require_admin(request: Request, db: Session = Depends(get_db)) -> AdminUser:
@@ -81,7 +77,7 @@ def require_admin(request: Request, db: Session = Depends(get_db)) -> AdminUser:
         if user is None:
             raise HTTPException(
                 status_code=401,
-                detail={"code": "invalid_session", "message": "会话无效或已过期"},
+                detail={"code": "invalid_session", "message": t("auth.invalid_session")},
                 headers={"WWW-Authenticate": "Bearer"},
             )
     # Suppliers live in the same table but are external tenants: they must never
@@ -89,7 +85,7 @@ def require_admin(request: Request, db: Session = Depends(get_db)) -> AdminUser:
     if user.role not in STAFF_ROLES:
         raise HTTPException(
             status_code=403,
-            detail={"code": "staff_only", "message": "该接口仅对平台员工开放"},
+            detail={"code": "staff_only", "message": t("auth.staff_only")},
         )
     return user
 
@@ -293,9 +289,9 @@ def change_own_password(
     and sign in again with the new password.
     """
     if not ops_service.verify_password(body.old_password, user.password_hash):
-        raise HTTPException(status_code=400, detail="原密码不正确")
+        raise HTTPException(status_code=400, detail=t("auth.password_wrong"))
     if body.new_password == body.old_password:
-        raise HTTPException(status_code=422, detail="新密码不能与原密码相同")
+        raise HTTPException(status_code=422, detail=t("auth.password_same"))
     _validate_password(body.new_password, user.username)
     killed = _revoke_or_503(user.id)
     user.password_hash = ops_service.hash_password(body.new_password)
@@ -354,7 +350,7 @@ def _clean_username(raw: str) -> str:
     if not USERNAME_RE.match(username):
         raise HTTPException(
             status_code=422,
-            detail="账号需为 3–32 位小写字母、数字或 . _ -，并以字母或数字开头",
+            detail=t("staff.username_rule"),
         )
     return username
 
@@ -367,13 +363,13 @@ def _validate_role(role: str) -> str:
 
 def _validate_password(password: str, username: str) -> str:
     if len(password) < 8:
-        raise HTTPException(status_code=422, detail="密码至少 8 位")
+        raise HTTPException(status_code=422, detail=t("staff.password_min"))
     if len(password) > 128:
-        raise HTTPException(status_code=422, detail="密码最多 128 位")
+        raise HTTPException(status_code=422, detail=t("staff.password_max"))
     if password != password.strip():
-        raise HTTPException(status_code=422, detail="密码首尾不能是空格")
+        raise HTTPException(status_code=422, detail=t("staff.password_no_edge_space"))
     if password.lower() == username.lower():
-        raise HTTPException(status_code=422, detail="密码不能与账号相同")
+        raise HTTPException(status_code=422, detail=t("staff.password_same_as_username"))
     return password
 
 
@@ -402,7 +398,7 @@ def _ensure_admin_remains(db: Session, row: AdminUser) -> None:
         or 0
     )
     if remaining == 0:
-        raise HTTPException(status_code=409, detail="至少要保留一个启用状态的管理员")
+        raise HTTPException(status_code=409, detail=t("staff.keep_one_admin"))
 
 
 @router.get("/staff")
@@ -440,7 +436,7 @@ def create_staff(
     supplier = None
     if body.role == ROLE_PARTNER:
         if body.supplier_id is None:
-            raise HTTPException(status_code=422, detail="上剧方账号必须绑定供应商")
+            raise HTTPException(status_code=422, detail=t("staff.supplier_must_bind"))
         supplier = db.get(Supplier, body.supplier_id)
         if supplier is None:
             raise HTTPException(status_code=404, detail="supplier not found")
@@ -448,12 +444,12 @@ def create_staff(
             select(AdminUser.id).where(AdminUser.supplier_id == body.supplier_id)
         )
         if bound is not None:
-            raise HTTPException(status_code=409, detail="该供应商已有账号")
+            raise HTTPException(status_code=409, detail=t("staff.supplier_has_account"))
     elif body.supplier_id is not None:
-        raise HTTPException(status_code=422, detail="只有上剧方账号可以绑定供应商")
+        raise HTTPException(status_code=422, detail=t("staff.only_supplier_can_bind"))
 
     if db.scalar(select(AdminUser.id).where(AdminUser.username == username)) is not None:
-        raise HTTPException(status_code=409, detail="账号已存在")
+        raise HTTPException(status_code=409, detail=t("staff.account_exists"))
     row = AdminUser(
         username=username,
         display_name=body.display_name.strip(),
@@ -467,7 +463,7 @@ def create_staff(
         db.flush()
     except IntegrityError as exc:  # concurrent insert of the same username
         db.rollback()
-        raise HTTPException(status_code=409, detail="账号已存在") from exc
+        raise HTTPException(status_code=409, detail=t("staff.account_exists")) from exc
     db.add(
         AuditLog(
             actor_type="admin",
@@ -504,12 +500,12 @@ def update_staff(
     if body.role is not None and body.role != row.role:
         _validate_role(body.role)
         if row.id == actor.id:
-            raise HTTPException(status_code=400, detail="不能修改自己的角色")
+            raise HTTPException(status_code=400, detail=t("staff.cannot_change_own_role"))
         # Supplier accounts are created together with their tenant; moving a
         # staff account into (or out of) a supplier would orphan its dramas.
         if row.role == ROLE_PARTNER or body.role == ROLE_PARTNER:
             raise HTTPException(
-                status_code=400, detail="上剧方账号的角色不可修改，请改绑供应商"
+                status_code=400, detail=t("staff.supplier_role_locked")
             )
         if row.role == ROLE_ADMIN and row.status == STATUS_ACTIVE:
             _ensure_admin_remains(db, row)
@@ -561,7 +557,7 @@ def set_staff_status(
     killed = 0
     if body.status == STATUS_DISABLED:
         if row.id == actor.id:
-            raise HTTPException(status_code=400, detail="不能禁用自己")
+            raise HTTPException(status_code=400, detail=t("staff.cannot_disable_self"))
         if row.role == ROLE_ADMIN and row.status == STATUS_ACTIVE:
             _ensure_admin_remains(db, row)
         # Revoke before commit: if Redis is down the request fails and the
@@ -615,7 +611,7 @@ def reset_staff_password(
     return Response(status_code=204)
 
 
-# ---- suppliers (上剧方) ----
+# ---- suppliers ----
 
 
 def _supplier_out(db: Session, row: Supplier) -> dict:
@@ -702,7 +698,7 @@ def create_supplier(
     actor: AdminUser = Depends(require_admin_role),
 ):
     if db.scalar(select(Supplier.id).where(Supplier.name == body.name.strip())) is not None:
-        raise HTTPException(status_code=409, detail="供应商名称已存在")
+        raise HTTPException(status_code=409, detail=t("staff.supplier_name_exists"))
     row = Supplier(
         name=body.name.strip(),
         contact_name=body.contact_name.strip(),
@@ -716,9 +712,9 @@ def create_supplier(
         db.flush()
     except IntegrityError as exc:
         db.rollback()
-        raise HTTPException(status_code=409, detail="供应商名称已存在") from exc
+        raise HTTPException(status_code=409, detail=t("staff.supplier_name_exists")) from exc
     _record_share(
-        db, row, body.revenue_share_bps, actor_id=actor.id, note="初始比例"
+        db, row, body.revenue_share_bps, actor_id=actor.id, note=t("staff.supplier_share_init")
     )
     db.add(
         AuditLog(
@@ -766,7 +762,7 @@ def update_supplier(
         db.commit()
     except IntegrityError as exc:
         db.rollback()
-        raise HTTPException(status_code=409, detail="供应商名称已存在") from exc
+        raise HTTPException(status_code=409, detail=t("staff.supplier_name_exists")) from exc
     db.refresh(row)
     return _supplier_out(db, row)
 
@@ -787,7 +783,7 @@ def set_supplier_status(
     if body.status == STATUS_DISABLED and account is not None:
         # Disabling the tenant must also cut off its login immediately.
         account.status = STATUS_DISABLED
-        account.disable_reason = reason or "供应商停用"
+        account.disable_reason = reason or t("staff.supplier_disabled_reason")
         killed = _revoke_or_503(account.id)
     elif body.status == STATUS_ACTIVE and account is not None:
         account.status = STATUS_ACTIVE
@@ -899,7 +895,7 @@ def list_dramas(
         .offset((page - 1) * page_size)
         .limit(page_size)
     ).all()
-    # 全库按状态计数，不受分页 / 筛选影响，给列表页顶部的统计条用。
+    # Count the whole library by status, ignoring pagination / filters: the top stats bar on the list page.
     counts = {
         row.status: row.n
         for row in db.execute(
@@ -936,7 +932,7 @@ def create_drama(
             status_code=409,
             detail={
                 "code": "title_exists",
-                "message": "同名剧已存在",
+                "message": t("drama.title_exists"),
                 "drama_id": existing.id if existing else None,
             },
         ) from exc
@@ -978,7 +974,7 @@ def update_drama(
         db.rollback()
         raise HTTPException(
             status_code=409,
-            detail={"code": "title_exists", "message": "同名剧已存在"},
+            detail={"code": "title_exists", "message": t("drama.title_exists")},
         ) from exc
     db.refresh(drama)
     return _drama_out(db, drama)

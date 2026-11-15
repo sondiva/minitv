@@ -23,14 +23,15 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.i18n import t
 from app.modules.billing.models import BillingSettings, Order, Plan, PlanVersion, Subscription
 from app.modules.common.models import AuditLog
 from app.modules.content.models import Drama
 
 DEFAULT_PLANS = [
-    ("weekly", "Weekly", "周卡", 999, False, ["Unlock all", "No ads", "1080p"]),
-    ("monthly", "Monthly", "月卡", 1999, True, ["Weekly benefits", "Download"]),
-    ("yearly", "Yearly", "年卡", 7999, False, ["Monthly benefits", "Priority support", "Save 58%"]),
+    ("weekly", "Weekly", t("plan.weekly_name"), 999, False, ["Unlock all", "No ads", "1080p"]),
+    ("monthly", "Monthly", t("plan.monthly_name"), 1999, True, ["Weekly benefits", "Download"]),
+    ("yearly", "Yearly", t("plan.yearly_name"), 7999, False, ["Monthly benefits", "Priority support", "Save 58%"]),
 ]
 
 
@@ -458,17 +459,17 @@ def grant_membership(
     version = _latest_version(session, plan)
     length = PLAN_DAYS.get(plan_code, 30) if days is None else int(days)
     if length < 1 or length > MAX_GRANT_DAYS:
-        raise BillingError(422, f"天数需在 1–{MAX_GRANT_DAYS} 之间")
+        raise BillingError(422, t("billing.grant_days_range", max=MAX_GRANT_DAYS))
     reason = (reason or "").strip()
     if not reason:
-        raise BillingError(422, "请填写调整原因")
+        raise BillingError(422, t("billing.grant_reason_required"))
 
     before_until = access_until(session, user_id)
     row = active_subscription(session, user_id, for_update=True)
     if mode == "restart" and row is not None and row.stripe_subscription_id:
         # We cannot move Stripe's billing period, so "restart" would silently
         # leave the subscription window in place.
-        raise BillingError(409, "该用户有自动续费订阅，请改用「顺延」")
+        raise BillingError(409, t("billing.has_auto_renew"))
 
     if row is None:
         row = Subscription(
@@ -531,18 +532,18 @@ def revoke_membership(
         raise BillingError(422, "unknown revoke mode")
     reason = (reason or "").strip()
     if not reason:
-        raise BillingError(422, "请填写取消原因")
+        raise BillingError(422, t("billing.cancel_reason_required"))
 
     row = active_subscription(session, user_id, for_update=True)
     now = _now()
     before_until = access_until(session, user_id)
     if row is None or before_until is None:
-        raise BillingError(409, "该用户当前没有有效会员")
+        raise BillingError(409, t("billing.no_active_membership"))
 
     stripe_id = row.stripe_subscription_id
     if mode == "period_end":
         if not stripe_id:
-            raise BillingError(409, "时长包没有续费概念，请选择「立即收回」")
+            raise BillingError(409, t("billing.no_renew_concept"))
         # Access continues to current_period_end; canceled_at only marks
         # "will not renew". A failure here raises 502 and leaves the row alone.
         _stripe_request(f"/subscriptions/{stripe_id}", {"cancel_at_period_end": "true"}, method="POST")

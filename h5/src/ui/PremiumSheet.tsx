@@ -8,7 +8,7 @@ import {
   type Plan,
 } from "../api";
 import type { Locale } from "../copy";
-import { t } from "../copy";
+import { dateLocale, t } from "../copy";
 import { Sheet } from "./Sheet";
 import { toast } from "./toast";
 
@@ -17,7 +17,7 @@ type BillingMode = "subscription" | "one_time";
 
 function formatDay(iso: string | null, locale: Locale): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString(locale === "zh" ? "zh-CN" : "en-US", {
+  return new Date(iso).toLocaleDateString(dateLocale(locale), {
     month: "short",
     day: "numeric",
     year: "numeric",

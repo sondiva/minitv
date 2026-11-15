@@ -34,6 +34,7 @@ import { api, errorText } from "../api";
 import EpisodesPanel from "./EpisodesPanel";
 import { PublishPanel } from "./StagePages";
 import { DramaGroupsPanel } from "./Groups";
+import { t } from "../copy";
 
 type Drama = {
   id: number;
@@ -49,12 +50,12 @@ type Drama = {
 
 type TagOption = { id: number; name_en: string; name_zh: string; status: string; drama_count: number };
 
-const STATUS_LABELS: Record<string, { text: string; color: string }> = {
-  draft: { text: "草稿", color: "default" },
-  in_review: { text: "审核中", color: "orange" },
-  published: { text: "已上架", color: "green" },
-  unpublished: { text: "已下架", color: "red" },
-};
+function STATUS_LABELS(): Record<string, { text: string; color: string }> { return {
+  draft: { text: t("common.draft"), color: "default" },
+  in_review: { text: t("common.in_review"), color: "orange" },
+  published: { text: t("common.published"), color: "green" },
+  unpublished: { text: t("common.unpublished"), color: "red" },
+};; }
 
 const COVER_MAX_BYTES = 5 * 1024 * 1024;
 const COVER_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -97,7 +98,7 @@ export default function DramaEdit() {
   }, [id, form]);
 
   useEffect(() => {
-    load().catch((e) => message.error(`加载失败：${errorText(e)}`));
+    load().catch((e) => message.error(t("dramaedit.load_failed", {v0: errorText(e)})));
   }, [load]);
 
   const loadEpisodeStats = useCallback(async () => {
@@ -133,11 +134,11 @@ export default function DramaEdit() {
     setSaving(true);
     try {
       await api(`/admin/v1/dramas/${id}`, { method: "PATCH", body: JSON.stringify(values) });
-      message.success("已保存");
+      message.success(t("common.saved"));
       setDirty(false);
       await load();
     } catch (e: any) {
-      message.error(`保存失败：${errorText(e)}`);
+      message.error(t("stagepages.save_failed", {v0: errorText(e)}));
     } finally {
       setSaving(false);
     }
@@ -156,9 +157,9 @@ export default function DramaEdit() {
       setCoverUrl(res.cover_url);
       setDrama((d) => (d ? { ...d, cover_url: res.cover_url } : d));
       setUrlEditing(false);
-      message.success("封面已更新");
+      message.success(t("partnerdramaedit.cover_updated"));
     } catch (e: any) {
-      message.error(`封面上传失败：${errorText(e)}`);
+      message.error(t("dramaedit.cover_upload_failed", {v0: errorText(e)}));
     } finally {
       setCoverBusy(null);
     }
@@ -168,11 +169,11 @@ export default function DramaEdit() {
     const okType =
       COVER_TYPES.includes(file.type || "") || /\.(jpe?g|png|webp)$/i.test(file.name || "");
     if (!okType) {
-      message.error("封面只支持 JPG / PNG / WebP 格式");
+      message.error(t("dramaedit.cover_format_only"));
       return Upload.LIST_IGNORE;
     }
     if (file.size > COVER_MAX_BYTES) {
-      message.error("封面大小需在 5MB 以内");
+      message.error(t("dramaedit.cover_size_limit"));
       return Upload.LIST_IGNORE;
     }
     void uploadCover(file as unknown as File);
@@ -186,9 +187,9 @@ export default function DramaEdit() {
       form.setFieldValue("cover_url", "");
       setCoverUrl("");
       setDrama((d) => (d ? { ...d, cover_url: "" } : d));
-      message.success("封面已删除");
+      message.success(t("dramaedit.cover_deleted"));
     } catch (e: any) {
-      message.error(`删除封面失败：${errorText(e)}`);
+      message.error(t("dramaedit.cover_delete_failed", {v0: errorText(e)}));
     } finally {
       setCoverBusy(null);
     }
@@ -202,48 +203,48 @@ export default function DramaEdit() {
     );
   }
 
-  const statusMeta = STATUS_LABELS[drama.status] ?? { text: drama.status, color: "default" };
+  const statusMeta = STATUS_LABELS()[drama.status] ?? { text: drama.status, color: "default" };
 
   // ---- 上架流程：基本信息 → 登记分集 → 上传视频 → 提交上架 ----
   const uploadedCount = episodeStats?.uploaded ?? 0;
   const basicsReady = Boolean(drama.cover_url && drama.synopsis?.trim());
   const videosReady = drama.episode_count > 0 && uploadedCount >= drama.episode_count;
   const issues = [
-    !drama.cover_url ? "还没有上传封面" : null,
-    !drama.synopsis?.trim() ? "还没有填写简介" : null,
+    !drama.cover_url ? t("dramaedit.no_cover_uploaded") : null,
+    !drama.synopsis?.trim() ? t("dramaedit.no_synopsis") : null,
     drama.episode_count === 0
-      ? "还没有登记分集"
+      ? t("dramaedit.no_episodes_registered")
       : !videosReady
-        ? `还有 ${drama.episode_count - uploadedCount} 集没有上传视频`
+        ? t("dramaedit.episodes_missing_video", {v0: drama.episode_count - uploadedCount})
         : null,
   ].filter((value): value is string => value !== null);
 
   const flowSteps = [
     {
       key: "info",
-      title: "基本信息",
-      desc: basicsReady ? "封面 / 简介已填" : "补封面、简介、标签",
+      title: t("episodespanel.basic_info"),
+      desc: basicsReady ? t("dramaedit.basics_done") : t("dramaedit.fill_basics"),
       done: basicsReady,
     },
     {
       key: "episodes",
-      title: "登记分集",
-      desc: drama.episode_count > 0 ? `${drama.episode_count} 集` : "还没有分集",
+      title: t("dramaedit.register_episodes"),
+      desc: drama.episode_count > 0 ? t("dramaedit.episode_count_text", {v0: drama.episode_count}) : t("dramaedit.no_episodes_yet"),
       done: drama.episode_count > 0,
     },
     {
       key: "episodes",
-      title: "上传视频",
+      title: t("dramaedit.upload_videos"),
       desc:
         drama.episode_count > 0
-          ? `${uploadedCount}/${drama.episode_count} 集已上传`
-          : "先登记分集",
+          ? t("dramaedit.episodes_uploaded", {v0: uploadedCount, v1: drama.episode_count})
+          : t("dramaedit.register_episodes_first"),
       done: videosReady,
     },
     {
       key: "publish",
-      title: "提交上架",
-      desc: "提交审核 → 上架",
+      title: t("dramaedit.submit_publish"),
+      desc: t("dramaedit.submit_review_publish"),
       done: drama.status === "published",
     },
   ];
@@ -273,7 +274,7 @@ export default function DramaEdit() {
         <Row gutter={[40, 24]}>
           <Col xs={24} md={8} lg={7}>
             <Space direction="vertical" size={12} style={{ width: "100%" }}>
-              <Typography.Text strong>封面</Typography.Text>
+              <Typography.Text strong>{t("partnerdramaedit.cover")}</Typography.Text>
               <div style={{ width: COVER_W, maxWidth: "100%" }}>
                 <Upload {...uploadProps}>
                   <div
@@ -295,13 +296,13 @@ export default function DramaEdit() {
                     {coverUrl ? (
                       <img
                         src={coverUrl}
-                        alt="封面预览"
+                        alt={t("partnerdramaedit.cover_preview")}
                         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                       />
                     ) : (
                       <Space direction="vertical" align="center" size={6} style={{ opacity: 0.55 }}>
                         <PictureOutlined style={{ fontSize: 30 }} />
-                        <Typography.Text type="secondary">点击上传封面</Typography.Text>
+                        <Typography.Text type="secondary">{t("dramaedit.click_upload_cover")}</Typography.Text>
                       </Space>
                     )}
                     {coverBusy === "upload" && (
@@ -329,14 +330,14 @@ export default function DramaEdit() {
                       loading={coverBusy === "upload"}
                       disabled={coverBusy !== null}
                     >
-                      {coverUrl ? "替换" : "上传"}
+                      {coverUrl ? t("partnerdramaedit.replace") : t("common.upload")}
                     </Button>
                   </Upload>
                   <Popconfirm
-                    title="删除封面"
-                    description="将从 CDN 移除该封面，确定删除？"
-                    okText="删除"
-                    cancelText="取消"
+                    title={t("dramaedit.delete_cover")}
+                    description={t("dramaedit.delete_cover_confirm")}
+                    okText={t("common.delete")}
+                    cancelText={t("common.cancel")}
                     okButtonProps={{ danger: true }}
                     onConfirm={removeCover}
                     disabled={!coverUrl}
@@ -348,7 +349,7 @@ export default function DramaEdit() {
                       loading={coverBusy === "delete"}
                       disabled={!coverUrl || coverBusy !== null}
                     >
-                      删除
+                      {t("common.delete")}
                     </Button>
                   </Popconfirm>
                 </Space>
@@ -365,7 +366,7 @@ export default function DramaEdit() {
                       setUrlEditing(!urlEditing);
                     }}
                   >
-                    {urlEditing ? "收起链接登记" : "使用图片链接登记"}
+                    {urlEditing ? t("dramaedit.collapse_url_register") : t("dramaedit.register_by_url")}
                   </Button>
                   {urlEditing && (
                     <Input.Search
@@ -373,7 +374,7 @@ export default function DramaEdit() {
                       placeholder="https://cdn.example/cover.jpg"
                       value={urlDraft}
                       onChange={(e) => setUrlDraft(e.target.value)}
-                      enterButton="应用"
+                      enterButton={t("dramaedit.apply")}
                       onSearch={(v) => {
                         form.setFieldValue("cover_url", v.trim());
                         setCoverUrl(v.trim());
@@ -385,7 +386,7 @@ export default function DramaEdit() {
                 </div>
 
                 <Typography.Paragraph type="secondary" style={{ fontSize: 12, marginTop: 12, marginBottom: 0 }}>
-                  支持 JPG / PNG / WebP，不超过 5MB，建议 3:4 竖版，≥ 720×960。
+                  {t("dramaedit.cover_requirements")}
                 </Typography.Paragraph>
               </div>
             </Space>
@@ -393,22 +394,22 @@ export default function DramaEdit() {
 
           <Col xs={24} md={16} lg={17}>
             <Form.Item
-              label="剧名"
+              label={t("common.drama_name")}
               name="title"
-              rules={[{ required: true, message: "剧名必填" }]}
+              rules={[{ required: true, message: t("partnerdramaedit.drama_name_required") }]}
               style={{ maxWidth: 480 }}
             >
-              <Input maxLength={200} showCount placeholder="请输入剧名" />
+              <Input maxLength={200} showCount placeholder={t("dramaedit.enter_drama_title")} />
             </Form.Item>
 
-            <Form.Item label="简介" name="synopsis">
-              <Input.TextArea rows={6} maxLength={20000} showCount placeholder="请输入剧情简介" />
+            <Form.Item label={t("drama.synopsis")} name="synopsis">
+              <Input.TextArea rows={6} maxLength={20000} showCount placeholder={t("dramaedit.enter_synopsis")} />
             </Form.Item>
 
-            <Form.Item label="标签" name="tag_ids" style={{ maxWidth: 640 }}>
+            <Form.Item label={t("partnerdramaedit.tags")} name="tag_ids" style={{ maxWidth: 640 }}>
               <Select
                 mode="multiple"
-                placeholder="选择标签"
+                placeholder={t("dramaedit.select_tags")}
                 allowClear
                 optionFilterProp="label"
                 options={tagOptions.map((t) => ({
@@ -421,18 +422,18 @@ export default function DramaEdit() {
             <Row gutter={24} style={{ maxWidth: 640 }}>
               <Col span={12}>
                 <Form.Item
-                  label="免费集数"
+                  label={t("partnerdramaedit.free_episodes")}
                   name="free_episode_count"
-                  tooltip="用户可直接观看的集数，超出的集数需要金币解锁"
+                  tooltip={t("dramaedit.free_episodes_tip")}
                 >
                   <InputNumber min={0} style={{ width: "100%" }} />
                 </Form.Item>
               </Col>
               <Col span={12}>
                 <Form.Item
-                  label="单集金币"
+                  label={t("partnerdramaedit.coins_per_episode")}
                   name="coin_price_per_episode"
-                  tooltip="解锁单集所需金币"
+                  tooltip={t("dramaedit.coins_per_episode_tip")}
                 >
                   <InputNumber min={0} style={{ width: "100%" }} />
                 </Form.Item>
@@ -443,16 +444,16 @@ export default function DramaEdit() {
 
             <Space>
               <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving}>
-                保存
+                {t("common.save")}
               </Button>
               <Button
                 icon={<ReloadOutlined />}
                 disabled={!dirty || saving}
-                onClick={() => load().catch((e) => message.error(`重置失败：${errorText(e)}`))}
+                onClick={() => load().catch((e) => message.error(t("dramaedit.reset_failed", {v0: errorText(e)})))}
               >
-                重置
+                {t("partnerdramaedit.reset")}
               </Button>
-              {dirty && <Typography.Text type="warning">有未保存的修改</Typography.Text>}
+              {dirty && <Typography.Text type="warning">{t("partnerdramaedit.unsaved_changes")}</Typography.Text>}
             </Space>
           </Col>
         </Row>
@@ -465,7 +466,7 @@ export default function DramaEdit() {
       <Card styles={{ body: { padding: "16px 24px" } }}>
         <Space wrap size="middle">
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/dramas")}>
-            返回列表
+            {t("partnerdramaedit.back_to_list")}
           </Button>
           <Divider type="vertical" style={{ height: 24 }} />
           <Typography.Title level={4} style={{ margin: 0 }}>
@@ -473,7 +474,7 @@ export default function DramaEdit() {
           </Typography.Title>
           <Tag color={statusMeta.color}>{statusMeta.text}</Tag>
           <Typography.Text type="secondary">
-            ID #{drama.id} · {drama.episode_count} 集
+            ID #{drama.id} · {drama.episode_count} {t("common.episodes_unit")}
           </Typography.Text>
         </Space>
       </Card>
@@ -481,7 +482,7 @@ export default function DramaEdit() {
       {drama.status !== "published" && (
         <Card
           size="small"
-          title="上架流程"
+          title={t("partnerdramaedit.publish_flow")}
           extra={
             nextStepIndex >= 0 ? (
               <Button
@@ -489,7 +490,7 @@ export default function DramaEdit() {
                 style={{ paddingInline: 0 }}
                 onClick={() => setActiveTab(flowSteps[nextStepIndex].key)}
               >
-                去完成：{flowSteps[nextStepIndex].title} →
+                {t("drama.complete_next_step", {v0: flowSteps[nextStepIndex].title})}
               </Button>
             ) : null
           }
@@ -510,12 +511,12 @@ export default function DramaEdit() {
         activeKey={activeTab}
         onChange={setActiveTab}
         items={[
-          { key: "info", label: "基本信息", children: infoTab },
-          { key: "episodes", label: "分集", children: <EpisodesPanel dramaId={id!} /> },
-          { key: "groups", label: "首页分组", children: <DramaGroupsPanel dramaId={id!} /> },
+          { key: "info", label: t("episodespanel.basic_info"), children: infoTab },
+          { key: "episodes", label: t("drama.episodes"), children: <EpisodesPanel dramaId={id!} /> },
+          { key: "groups", label: t("groups.home_groups"), children: <DramaGroupsPanel dramaId={id!} /> },
           {
             key: "publish",
-            label: "发布与下架",
+            label: t("dramaedit.publish_unpublish"),
             children: (
               <PublishPanel
                 dramaId={id!}

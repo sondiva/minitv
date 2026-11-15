@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, Typography, message } from "antd";
 import { api } from "../api";
+import { t } from "../copy";
 
 type TagRow = {
   id: number;
@@ -56,18 +57,18 @@ export default function Tags() {
       } else {
         await api("/admin/v1/tags", { method: "POST", body: JSON.stringify(values) });
       }
-      message.success("已保存");
+      message.success(t("common.saved"));
       setModalOpen(false);
       await load();
     } catch (e: any) {
       const detail = e?.detail;
       if (typeof detail === "string") {
-        message.error(`保存失败：${detail}`);
+        message.error(t("stagepages.save_failed", {v0: detail}));
       } else if (detail?.msg) {
         const field = detail?.loc?.slice(-1)[0];
-        message.error(`保存失败：${field ? field + " " : ""}${detail.msg}`);
+        message.error(t("tags.save_failed_field", {v0: field ? field + " " : "", v1: detail.msg}));
       } else {
-        message.error(`保存失败：${e?.message ?? e}`);
+        message.error(t("stagepages.save_failed", {v0: e?.message ?? e}));
       }
     }
   };
@@ -75,15 +76,15 @@ export default function Tags() {
   const onDelete = async (row: TagRow) => {
     try {
       await api(`/admin/v1/tags/${row.id}`, { method: "DELETE" });
-      message.success("已删除");
+      message.success(t("common.deleted"));
       await load();
     } catch (e: any) {
       const detail = e?.detail;
       if (detail?.affected_dramas) {
         const names = detail.affected_dramas.map((d: any) => `#${d.id} ${d.title}`).join("、");
-        Modal.warning({ title: "标签已被使用，无法删除", content: `影响范围：${names}` });
+        Modal.warning({ title: t("tags.tag_in_use"), content: t("tags.impact_scope", {v0: names}) });
       } else {
-        message.error(`删除失败：${e?.message ?? e}`);
+        message.error(t("drama.delete_failed", {v0: e?.message ?? e}));
       }
     }
   };
@@ -92,9 +93,9 @@ export default function Tags() {
     <Space direction="vertical" style={{ width: "100%" }} size="middle">
       <Space>
         <Button type="primary" onClick={openCreate}>
-          + 新建标签
+          {t("tags.new_tag_button")}
         </Button>
-        <Typography.Text type="secondary">共 {rows.length} 个标签</Typography.Text>
+        <Typography.Text type="secondary">{t("tags.total_tags", {v0: rows.length})}</Typography.Text>
       </Space>
       <Table<TagRow>
         rowKey="id"
@@ -103,29 +104,29 @@ export default function Tags() {
         scroll={{ x: 760 }}
         pagination={{ pageSize: 20, showSizeChanger: true }}
         columns={[
-          { title: "英文名（必填）", dataIndex: "name_en", render: (v: string) => <Typography.Text code>{v}</Typography.Text> },
-          { title: "中文名", dataIndex: "name_zh" },
-          { title: "分类", dataIndex: "category", render: (v: string) => v || "-" },
-          { title: "关联剧数", dataIndex: "drama_count", width: 90 },
+          { title: t("tags.english_name_required"), dataIndex: "name_en", render: (v: string) => <Typography.Text code>{v}</Typography.Text> },
+          { title: t("homeops.chinese_name"), dataIndex: "name_zh" },
+          { title: t("tags.category"), dataIndex: "category", render: (v: string) => v || "-" },
+          { title: t("tags.linked_drama_count"), dataIndex: "drama_count", width: 90 },
           {
-            title: "状态",
+            title: t("common.status"),
             dataIndex: "status",
             width: 90,
             render: (v: string) =>
-              v === "enabled" ? <Tag color="green">启用</Tag> : <Tag>停用</Tag>,
+              v === "enabled" ? <Tag color="green">{t("common.enable")}</Tag> : <Tag>{t("groups.deactivate")}</Tag>,
           },
           {
-            title: "操作",
+            title: t("common.actions"),
             key: "actions",
             width: 140,
             render: (_, r) => (
               <Space>
                 <Button type="link" size="small" onClick={() => openEdit(r)}>
-                  编辑
+                  {t("common.edit")}
                 </Button>
-                <Popconfirm title="确认删除该标签？" onConfirm={() => onDelete(r)}>
+                <Popconfirm title={t("tags.confirm_delete_tag")} onConfirm={() => onDelete(r)}>
                   <Button type="link" size="small" danger>
-                    删除
+                    {t("common.delete")}
                   </Button>
                 </Popconfirm>
               </Space>
@@ -134,7 +135,7 @@ export default function Tags() {
         ]}
       />
       <Modal
-        title={editing ? `编辑标签：${editing.name_en}` : "新建标签"}
+        title={editing ? t("tags.edit_tag_title", {v0: editing.name_en}) : t("tags.create_tag")}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={() => form.submit()}
@@ -142,23 +143,23 @@ export default function Tags() {
       >
         <Form form={form} layout="vertical" onFinish={onSave}>
           <Form.Item
-            label="英文名"
+            label={t("homeops.english_name")}
             name="name_en"
-            rules={[{ required: true, message: "英文名必填" }]}
+            rules={[{ required: true, message: t("tags.english_name_required_msg") }]}
           >
             <Input maxLength={64} placeholder="Urban Fantasy" />
           </Form.Item>
-          <Form.Item label="中文名" name="name_zh">
-            <Input maxLength={64} placeholder="都市奇幻" />
+          <Form.Item label={t("homeops.chinese_name")} name="name_zh">
+            <Input maxLength={64} placeholder={t("tags.placeholder_example")} />
           </Form.Item>
-          <Form.Item label="分类" name="category">
+          <Form.Item label={t("tags.category")} name="category">
             <Input maxLength={32} placeholder="genre / mood / region" />
           </Form.Item>
-          <Form.Item label="状态" name="status" initialValue="enabled">
+          <Form.Item label={t("common.status")} name="status" initialValue="enabled">
             <Select
               options={[
-                { value: "enabled", label: "启用" },
-                { value: "disabled", label: "停用" },
+                { value: "enabled", label: t("common.enable") },
+                { value: "disabled", label: t("groups.deactivate") },
               ]}
             />
           </Form.Item>

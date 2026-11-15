@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
+from app.i18n import t
 from app.modules.common import bunny
 from app.modules.common.models import AuditLog
 from app.modules.content.models import (
@@ -77,7 +78,7 @@ def change_drama_status(session: Session, drama: Drama, to_status: str, *, actor
         and drama.review_state != "approved"
     ):
         raise PublishError(
-            409, {"code": "not_approved", "message": "上剧方剧集需审核通过后才能上架"}
+            409, {"code": "not_approved", "message": t("publish.not_approved")}
         )
     try:
         transition_drama(session, drama, to_status)
@@ -181,7 +182,7 @@ def delete_drama(session: Session, drama: Drama, *, confirm: bool, actor_id: int
             409,
             {
                 "confirm_required": True,
-                "message": "删除后不可恢复",
+                "message": t("publish.delete_irreversible"),
                 "impact": impact,
             },
         )

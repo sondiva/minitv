@@ -1,11 +1,12 @@
+import { t } from "../copy";
 /** Supplier-facing lifecycle label. Approved ≠ live, so the tag must say so. */
 export function partnerStage(status: string, reviewState: string): string {
-  if (reviewState === "rejected") return "已驳回";
-  if (reviewState === "pending") return "审核中";
-  if (status === "published") return "已上架";
-  if (status === "unpublished") return "已下架";
-  if (reviewState === "approved") return "待上架";
-  return "草稿";
+  if (reviewState === "rejected") return t("reviews.rejected");
+  if (reviewState === "pending") return t("common.in_review");
+  if (status === "published") return t("common.published");
+  if (status === "unpublished") return t("common.unpublished");
+  if (reviewState === "approved") return t("partnerdramas.pending_publish");
+  return t("common.draft");
 }
 
 export function partnerStageColor(status: string, reviewState: string): string | undefined {

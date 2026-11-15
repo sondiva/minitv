@@ -20,6 +20,7 @@ const en: Record<string, string> = {
   collapse: "less",
   ai_disclaimer: "AI generated content",
   more: "More",
+  watch_now: "Watch",
   exclusive: "MiniTV Original",
   hot: "HOT",
   coming: "Coming soon",
@@ -271,6 +272,7 @@ const zh: Record<string, string> = {
   collapse: "收起",
   ai_disclaimer: "作者声明：内容由 AI 生成",
   more: "更多",
+  watch_now: "立即观看",
   exclusive: "MiniTV 独播",
   hot: "热播",
   coming: "即将开放",
@@ -499,7 +501,258 @@ const zh: Record<string, string> = {
   err_generic: "出了点问题，请重试。",
 };
 
-export type Locale = "en" | "zh";
+const vi: Record<string, string> = {
+  "nav.home": "Trang chủ",
+  "nav.foryou": "Dành cho bạn",
+  "nav.rewards": "Thưởng",
+  "nav.me": "Tôi",
+  search: "Tìm phim ngắn",
+  retry: "Không tải được. Thử lại.",
+  empty: "Không còn nội dung",
+  locked: "Mở khóa tập này",
+  select: "Chọn tập",
+  episode_chip: "EP {number}",
+  episode_short: "EP {number}",
+  all_episodes: "Tất cả {count} tập",
+  all_episodes_bar: "Chọn tập · {count} tập",
+  synopsis: "Giới thiệu",
+  episodes_tab: "Các tập",
+  ep_watched: "Đã xem {count}",
+  ep_watching: "Đang xem {count}",
+  expand: "Mở rộng",
+  collapse: "Thu gọn",
+  ai_disclaimer: "Nội dung do AI tạo",
+  more: "Xem thêm",
+  watch_now: "Xem ngay",
+  exclusive: "MiniTV Original",
+  hot: "HOT",
+  coming: "Sắp ra mắt",
+  share: "Chia sẻ",
+  favorite: "Lưu",
+  playback_settings: "Cài đặt phát lại",
+  speed: "Tốc độ",
+  quality: "Chất lượng",
+  auto_quality: "Tự động",
+  sleep_timer: "Hẹn giờ tắt",
+  timer_off: "Tắt",
+  close: "Đóng",
+  back: "Quay lại",
+  sign_in: "Đăng nhập",
+  sign_in_hint: "Đồng bộ lượt thích, phim đã lưu và lịch sử xem",
+  email_label: "Email",
+  email_placeholder: "you@example.com",
+  send_code: "Gửi mã xác nhận",
+  sending: "Đang gửi…",
+  or: "hoặc",
+  continue_google: "Tiếp tục bằng Google",
+  continue_facebook: "Tiếp tục bằng Facebook",
+  enter_code: "Nhập mã xác nhận",
+  code_sent_to: "Đã gửi tới {email}",
+  change_email: "Đổi email",
+  verify_sign_in: "Xác nhận và đăng nhập",
+  verifying: "Đang xác nhận…",
+  resend_in: "Gửi lại sau {seconds} giây",
+  resend: "Gửi lại mã",
+  code_expires: "Mã hết hạn sau 10 phút",
+  terms: "Bằng việc tiếp tục, bạn đồng ý với Điều khoản dịch vụ",
+  sign_out: "Đăng xuất",
+  premium_strip_title: "MiniTV Premium",
+  premium_strip_sub: "Mở khóa toàn bộ, không quảng cáo, hủy bất cứ lúc nào",
+  premium_strip_cta: "Xem các gói",
+  premium_title: "Nâng cấp Premium",
+  premium_lede: "Mở khóa toàn bộ phim, không cần tích xu nữa. Hủy bất cứ lúc nào.",
+  premium_popular: "Phổ biến nhất",
+  premium_cta: "Đăng ký ngay",
+  premium_redirecting: "Đang chuyển…",
+  premium_note: "Thanh toán an toàn qua Stripe. Giá bằng USD, tự động gia hạn.",
+  premium_need_sign_in: "Hãy đăng nhập trước khi đăng ký.",
+  premium_failed: "Không thể bắt đầu thanh toán. Vui lòng thử lại.",
+  premium_min_price: "Gói này dưới mức tối thiểu $0.50 của Stripe nên chưa thể thanh toán.",
+  me_orders: "Đơn hàng",
+  me_orders_hint: "Xem",
+  orders_title: "Lịch sử mua hàng",
+  orders_empty: "Chưa có giao dịch mua nào",
+  orders_paid: "Đã thanh toán",
+  orders_pending: "Chờ thanh toán",
+  orders_failed: "Thanh toán thất bại",
+  orders_refunded: "Đã hoàn tiền",
+  orders_pass: "Gói thời hạn",
+  orders_sub: "Gói đăng ký",
+  orders_note: "Thanh toán được xử lý an toàn qua Stripe.",
+  premium_unit_weekly: "tuần",
+  premium_unit_monthly: "tháng",
+  premium_unit_yearly: "năm",
+  premium_active: "MiniTV Premium",
+  premium_active_until: "Còn hiệu lực đến {date}",
+  premium_paid: "Thanh toán thành công, chào mừng bạn đến với MiniTV Premium!",
+  premium_title_active: "Hội viên của bạn",
+  premium_badge_active: "Đang hiệu lực",
+  premium_plan_weekly: "MiniTV Weekly",
+  premium_plan_monthly: "MiniTV Monthly",
+  premium_plan_yearly: "MiniTV Yearly",
+  premium_ends_on: "Hết hạn ngày {date} · không gia hạn",
+  premium_cancel_cta: "Hủy đăng ký",
+  premium_canceling: "Đang hủy…",
+  premium_cancel_hint: "Bạn vẫn dùng được đến hết kỳ đã trả.",
+  premium_cancel_done: "Đã hủy gia hạn",
+  premium_cancel_failed: "Không hủy được. Vui lòng thử lại.",
+  premium_canceled_note: "Đã tắt gia hạn. Bạn vẫn dùng được đến ngày trên.",
+  premium_benefit_all: "Mở khóa mọi tập phim",
+  premium_benefit_noads: "Không quảng cáo",
+  premium_benefit_hd: "Phát 1080p",
+  premium_title_pass: "Gói thời hạn của bạn",
+  premium_pass_badge: "Gói thời hạn",
+  premium_extend_cta: "Gia hạn",
+  premium_extend_note: "Số ngày mới cộng dồn vào ngày hết hạn hiện tại.",
+  premium_buy_cta: "Mua ngay",
+  premium_buy_pass_cta: "Mua gói thời hạn",
+  premium_span_weekly: "7 ngày",
+  premium_span_monthly: "30 ngày",
+  premium_span_yearly: "365 ngày",
+  premium_lede_onetime: "Mua gói thời hạn — không tự động gia hạn. Mua thêm sẽ cộng dồn số ngày.",
+  premium_note_onetime: "Thanh toán an toàn qua Stripe. Trả một lần, không tự động trừ tiền.",
+  unlock_title: "Mở khóa tập {number}",
+  unlock_sub: "Tập đã mở khóa là của bạn mãi mãi, kể cả khi gói hết hạn.",
+  unlock_price: "{price} xu",
+  unlock_per_episode: "/ tập",
+  unlock_balance: "Số dư {balance} xu",
+  unlock_cta: "Mở khóa với {price} xu",
+  unlock_login_cta: "Đăng nhập để mở khóa",
+  unlock_short_cta: "Không đủ xu · thiếu {short}",
+  unlock_member_cta: "hoặc nâng cấp Premium để xem tất cả",
+  unlock_sheet_title: "Mở khóa tập {number}",
+  unlock_row_price: "Giá tập phim",
+  unlock_row_balance: "Số dư hiện tại",
+  unlock_row_after: "Số dư sau khi mở khóa",
+  unlock_note: "Tập đã mở khóa là vĩnh viễn. Khi hội viên còn hiệu lực sẽ không tốn xu. Lỗi thì thử lại, không bị trừ xu 2 lần.",
+  unlock_confirm: "Xác nhận · {price} xu",
+  unlock_confirming: "Đang mở khóa…",
+  unlock_success: "Đã mở khóa · còn {balance} xu",
+  unlock_already: "Đã mở khóa rồi",
+  unlock_member_active: "Hội viên đang hiệu lực — không tốn xu",
+  unlock_insufficient: "Không đủ xu — thiếu {short}",
+  unlock_need_coins: "Kiếm xu",
+  unlock_retry: "Thử lại",
+  unlock_failed: "Không mở khóa được. Vui lòng thử lại.",
+  my_favorites: "Phim đã lưu",
+  favorites_empty: "Chưa lưu gì cả",
+  favorites_hint: "Nhấn vào ngôi sao ở trang phim để lưu vào đây.",
+  me_id: "MiniTV ID",
+  me_edit_profile: "Sửa hồ sơ",
+  me_following: "Đang theo dõi",
+  me_followers: "Người theo dõi",
+  me_likes_received: "Lượt thích",
+  me_history: "Lịch sử xem",
+  me_history_sub: "Xem tiếp",
+  me_history_sub_count: "{count} bộ phim",
+  me_history_sub_one: "1 bộ phim",
+  me_list: "Phim đang theo dõi",
+  me_list_sub: "{count} phim đã lưu",
+  me_coins_title: "Xu",
+  me_coins_sub: "Xem chi tiết",
+  me_checkin: "Điểm danh hằng ngày",
+  me_checkin_go: "Đi điểm danh",
+  me_checkin_done: "Đã điểm danh",
+  me_messages: "Tin nhắn",
+  me_messages_empty: "Chưa có tin nhắn nào",
+  me_messages_hint: "Thông báo và ưu đãi sẽ hiện ở đây.",
+  me_settings: "Cài đặt",
+  me_language: "Ngôn ngữ",
+  me_set_account: "Tài khoản",
+  me_set_prefs: "Tùy chỉnh",
+  me_set_about: "Giới thiệu",
+  me_set_version: "Phiên bản",
+  me_set_edit: "Sửa hồ sơ",
+  sign_out_title: "Đăng xuất?",
+  sign_out_body: "Xu, lịch sử xem và hội viên của bạn vẫn ở tài khoản này. Bạn có thể đăng nhập lại bất cứ lúc nào.",
+  sign_out_cancel: "Hủy",
+  me_tab_history: "Lịch sử",
+  me_tab_favorites: "Đã lưu",
+  me_tab_likes: "Đã thích",
+  me_history_empty: "Chưa có lịch sử xem",
+  me_history_hint: "Phim bạn đã xem sẽ hiện ở đây.",
+  me_likes_empty: "Chưa thích phim nào",
+  me_likes_hint: "Nhấn vào trái tim ở trang phim để lưu vào đây.",
+  me_ep_progress: "Tập {ep} trên {total}",
+  me_ep_total: "{count} tập",
+  me_continue: "Xem tiếp tập {ep}",
+  me_ledger: "Sao kê xu",
+  me_balance: "Số dư",
+  me_ledger_empty: "Chưa có giao dịch xu nào",
+  me_ledger_checkin: "Điểm danh hằng ngày",
+  me_ledger_ad: "Thưởng xem quảng cáo",
+  me_ledger_unlock: "Mở khóa tập",
+  me_ledger_purchase: "Nạp xu",
+  me_ledger_signup: "Thưởng chào mừng",
+  me_ledger_refund: "Hoàn tiền",
+  me_ledger_bind: "Thưởng liên kết",
+  me_ledger_adjust: "Điều chỉnh số dư",
+  me_coins_unit: "{count} xu",
+  me_name: "Tên hiển thị",
+  me_bio: "Giới thiệu",
+  me_bio_placeholder: "Viết một dòng về bạn",
+  me_save: "Lưu",
+  me_saving: "Đang lưu…",
+  me_saved: "Đã lưu",
+  me_name_empty: "Vui lòng nhập tên",
+  me_checkin_ok: "Đã điểm danh · +{amount} xu",
+  me_checkin_already: "Hôm nay đã điểm danh rồi",
+  me_checkin_fail: "Điểm danh thất bại. Thử lại.",
+  rw_title: "Nhiệm vụ hằng ngày",
+  rw_sub: "Làm vài thao tác nhỏ, nhận xu mỗi ngày. Tiến độ đặt lại lúc nửa đêm.",
+  rw_balance: "Số dư xu",
+  rw_checkin_streak: "Đã điểm danh liên tiếp {n} ngày",
+  rw_checkin_ready: "Điểm danh để nhận +{amount} xu",
+  rw_checkin_done: "Đã điểm danh · +{amount}",
+  rw_checkin_btn: "Điểm danh",
+  rw_claim: "Nhận",
+  rw_claimed: "Đã nhận",
+  rw_go: "Thực hiện",
+  rw_task_like: "Thích 5 bộ phim",
+  rw_task_like_desc: "Thích 5 bộ phim khác nhau trong hôm nay",
+  rw_task_favorite: "Lưu 5 bộ phim",
+  rw_task_favorite_desc: "Lưu 5 bộ phim khác nhau vào danh sách trong hôm nay",
+  rw_task_watch: "Xem hết 8 tập",
+  rw_task_watch_desc: "Xem hết 8 tập khác nhau trong hôm nay",
+  rw_not_done: "Nhiệm vụ chưa hoàn thành",
+  rw_claim_ok: "Đã nhận · +{amount} xu",
+  rw_claim_fail: "Không nhận được. Thử lại.",
+  me_copied: "Đã sao chép",
+  me_copy_fail: "Không sao chép được",
+  err_reaction: "Không lưu được. Thử lại.",
+  coins: "Xu",
+  guest_title: "Đăng nhập MiniTV",
+  guest_body: "Lượt thích, phim đã lưu và lịch sử xem gắn với tài khoản của bạn.",
+  sign_in_prompt: "Đăng nhập để thích và lưu phim",
+  err_invalid_code: "Mã không đúng. Thử lại.",
+  err_code_expired: "Mã đã hết hạn. Hãy gửi mã mới.",
+  err_rate_limited: "Bạn gửi mã quá nhiều lần. Thử lại sau.",
+  err_mail_failed: "Không gửi được email. Thử lại sau giây lát.",
+  err_google: "Không đăng nhập được bằng Google ở đây. Hãy dùng email.",
+  err_facebook: "Không đăng nhập được bằng Facebook ở đây. Hãy dùng email.",
+  err_email_invalid: "Hãy nhập địa chỉ email hợp lệ.",
+  err_network: "Lỗi mạng. Hãy kiểm tra kết nối.",
+  comments: "Bình luận",
+  comment: "Bình luận",
+  comment_placeholder: "Viết bình luận…",
+  comments_empty: "Chưa có bình luận nào. Hãy là người đầu tiên.",
+  comments_more: "Xem thêm",
+  comment_posted: "Đã đăng bình luận",
+  comment_pending: "Đã gửi — sẽ hiện sau khi duyệt",
+  comment_blocked: "Bình luận này đã bị chặn",
+  comment_too_fast: "Bạn gửi quá nhanh. Thử lại sau giây lát.",
+  err_comment: "Không đăng được. Thử lại.",
+  err_comments_load: "Không tải được bình luận.",
+  just_now: "Vừa xong",
+  minutes_ago: "{n} phút trước",
+  hours_ago: "{n} giờ trước",
+  days_ago: "{n} ngày trước",
+  comment_you: "Bạn",
+  comments_sign_in: "Đăng nhập để tham gia bình luận",
+  err_generic: "Đã xảy ra lỗi. Thử lại.",
+};
+
+export type Locale = "en" | "zh" | "vi";
 
 /** Ops stores floor names in one language; the English UI should not show CJK. */
 const FLOOR_EN: Record<string, string> = {
@@ -511,13 +764,24 @@ const FLOOR_EN: Record<string, string> = {
   已完结: "Completed",
 };
 
+/** Ops stores floor names in Chinese; map them for Vietnamese the same way as English. */
+const FLOOR_VI: Record<string, string> = {
+  新上架: "Mới phát hành",
+  本周推荐: "Gợi ý tuần này",
+  热播: "Đang hot",
+  榜单: "Bảng xếp hạng",
+  猜你喜欢: "Dành cho bạn",
+  已完结: "Đã hoàn thành",
+};
+
 export function floorName(name: string, locale: Locale): string {
   if (locale === "zh") return name;
+  if (locale === "vi") return FLOOR_VI[name] ?? name;
   return FLOOR_EN[name] ?? name;
 }
 
 export function t(locale: Locale, key: string, vars: Record<string, string | number> = {}): string {
-  const table = locale === "zh" ? zh : en;
+  const table = locale === "zh" ? zh : locale === "vi" ? vi : en;
   let text = table[key] ?? en[key] ?? key;
   for (const [name, value] of Object.entries(vars)) {
     text = text.replaceAll(`{${name}}`, String(value));
@@ -528,9 +792,54 @@ export function t(locale: Locale, key: string, vars: Record<string, string | num
 const KEY = "minitv_h5_locale";
 
 export function loadLocale(): Locale {
-  return localStorage.getItem(KEY) === "zh" ? "zh" : "en";
+  const saved = localStorage.getItem(KEY);
+  return saved === "zh" || saved === "vi" ? saved : "en";
 }
 
 export function saveLocale(locale: Locale) {
   localStorage.setItem(KEY, locale);
+}
+
+/** BCP 47 tag for toLocaleDateString / toLocaleString calls. */
+export function dateLocale(locale: Locale): string {
+  if (locale === "zh") return "zh-CN";
+  if (locale === "vi") return "vi-VN";
+  return "en-US";
+}
+
+/** Header language button cycles zh -> en -> vi -> zh. */
+export const NEXT_LOCALE: Record<Locale, Locale> = { zh: "en", en: "vi", vi: "zh" };
+
+/** Header button shows the language it switches TO (like the old EN/中 toggle). */
+export const SWITCH_TO_LABEL: Record<Locale, string> = { zh: "EN", en: "VI", vi: "中" };
+
+/** Marker used to detect "hot" floors: ops stores group names in Chinese. */
+export const HOT_NAME_MARKER = "热";
+
+/** Compact-count unit for the zh locale (10,000 = 1 万). */
+export const ZH_COUNT_UNIT = "万";
+
+/** Language names shown natively in the settings language picker. */
+export const LANGUAGE_OPTIONS: { code: Locale; label: string }[] = [
+  { code: "en", label: "English" },
+  { code: "zh", label: "中文" },
+  { code: "vi", label: "Tiếng Việt" },
+];
+
+/**
+ * Channel tab titles come from ops as title_en / title_zh only. The pinned
+ * Discover tab is rendered even when ops has no rows, so its titles live here.
+ */
+const PINNED_TAB_TITLES: Record<string, { en: string; zh: string; vi: string }> = {
+  discover: { en: "Discover", zh: "发现", vi: "Khám phá" },
+};
+
+export function tabTitle(
+  tab: { code: string; title_en: string; title_zh?: string },
+  locale: Locale,
+): string {
+  const pinned = PINNED_TAB_TITLES[tab.code];
+  if (locale === "vi") return pinned?.vi ?? tab.title_en;
+  if (locale === "zh") return tab.title_zh || pinned?.zh || tab.title_en;
+  return tab.title_en;
 }

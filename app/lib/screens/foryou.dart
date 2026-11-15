@@ -157,7 +157,6 @@ class _FeedSlotState extends State<_FeedSlot> {
   late int commentCount;
   bool commentOpen = false;
 
-  bool get zh => widget.language == 'zh';
   Copy get copy => Copy(widget.language);
   Map<String, dynamic> get drama => widget.item['drama'] as Map<String, dynamic>;
   Map<String, dynamic> get episode => widget.item['episode'] as Map<String, dynamic>;
@@ -262,8 +261,8 @@ class _FeedSlotState extends State<_FeedSlot> {
             bottom: 128,
             child: _ActionRail(
               coverUrl: drama['cover_url'] as String?,
-              likes: formatCount(likeCount, zh: zh),
-              comments: commentCount > 0 ? formatCount(commentCount, zh: zh) : copy.t('comment'),
+              likes: formatCount(likeCount, locale: widget.language),
+              comments: commentCount > 0 ? formatCount(commentCount, locale: widget.language) : copy.t('comment'),
               liked: liked,
               onLike: _toggleLike,
               onComment: () => setState(() => commentOpen = true),

@@ -49,6 +49,7 @@ import {
 import { ApiError, api, errorText } from "../api";
 import { useConfirm } from "../confirm";
 import { useIsAdmin } from "../me";
+import { t } from "../copy";
 
 function useLoad<T>(path: string, fallback: T) {
   const [data, setData] = useState<T>(fallback);
@@ -127,7 +128,7 @@ function DeltaBadge({ value, render }: { value: number; render?: (value: number)
           fontWeight: 500,
         }}
       >
-        环比持平 · 0
+        {t("dashboard.flat_vs_previous")}
       </span>
     );
   }
@@ -147,7 +148,7 @@ function DeltaBadge({ value, render }: { value: number; render?: (value: number)
         fontWeight: 600,
       }}
     >
-      环比 {isUp ? "↑" : "↓"} {text}
+      {t("dashboard.period_change", {v0: isUp ? "↑" : "↓", v1: text})}
     </span>
   );
 }
@@ -326,7 +327,7 @@ export function DashboardPage() {
     bg: string;
   }[] = [
     {
-      title: "活跃用户（登录去重）",
+      title: t("dashboard.active_users_dedup"),
       value: int(data.active_users),
       hint: delta(data.active_users, previous.active_users),
       icon: <UserOutlined />,
@@ -334,7 +335,7 @@ export function DashboardPage() {
       bg: "#eff8ff",
     },
     {
-      title: "新增用户",
+      title: t("dashboard.new_users"),
       value: int(data.new_users),
       hint: delta(data.new_users, previous.new_users),
       icon: <UserAddOutlined />,
@@ -342,7 +343,7 @@ export function DashboardPage() {
       bg: "#f0f9ff",
     },
     {
-      title: "播放次数",
+      title: t("dashboard.plays_count"),
       value: int(data.plays),
       hint: delta(data.plays, previous.plays),
       icon: <PlayCircleOutlined />,
@@ -350,7 +351,7 @@ export function DashboardPage() {
       bg: "#fff1f0",
     },
     {
-      title: "完播次数",
+      title: t("dashboard.completions_count"),
       value: int(data.completes),
       hint: delta(data.completes, previous.completes),
       icon: <CheckCircleOutlined />,
@@ -358,7 +359,7 @@ export function DashboardPage() {
       bg: "#f5f3ff",
     },
     {
-      title: "完播率",
+      title: t("common.completion_rate"),
       value: rate(data.completion_rate),
       hint: delta(data.completion_rate, previous.completion_rate, (val) => `${(val / 100).toFixed(1)}pp`),
       icon: <RiseOutlined />,
@@ -366,7 +367,7 @@ export function DashboardPage() {
       bg: "#edfcf2",
     },
     {
-      title: "营收",
+      title: t("dashboard.revenue"),
       value: money(data.revenue_cents),
       hint: delta(data.revenue_cents, previous.revenue_cents, money),
       icon: <DollarOutlined />,
@@ -374,7 +375,7 @@ export function DashboardPage() {
       bg: "#fffbeb",
     },
     {
-      title: "付费订单",
+      title: t("dashboard.paid_orders"),
       value: int(data.paid_orders),
       hint: delta(data.paid_orders, previous.paid_orders),
       icon: <ShoppingCartOutlined />,
@@ -382,7 +383,7 @@ export function DashboardPage() {
       bg: "#fff7ed",
     },
     {
-      title: "金币消耗",
+      title: t("dashboard.coins_spent"),
       value: int(data.coin_spend),
       hint: delta(data.coin_spend, previous.coin_spend),
       icon: <ThunderboltOutlined />,
@@ -392,14 +393,14 @@ export function DashboardPage() {
   ];
 
   const overviewItems: { title: string; value: string; isPending?: boolean; isHighlight?: boolean }[] = [
-    { title: "总用户", value: int(overview.total_users) },
-    { title: "有效会员", value: int(overview.active_members), isHighlight: true },
-    { title: "已发布剧集", value: int(overview.published_dramas) },
-    { title: "已发布集数", value: int(overview.published_episodes) },
-    { title: "待发布集数", value: int(overview.episodes_awaiting_publish), isPending: true },
-    { title: "待审评论", value: int(overview.pending_comments), isPending: true },
-    { title: "累计播放", value: int(overview.lifetime_plays), isHighlight: true },
-    { title: "累计营收", value: money(overview.lifetime_revenue_cents), isHighlight: true },
+    { title: t("dashboard.total_users"), value: int(overview.total_users) },
+    { title: t("dashboard.active_members"), value: int(overview.active_members), isHighlight: true },
+    { title: t("dashboard.published_dramas"), value: int(overview.published_dramas) },
+    { title: t("dashboard.published_episodes"), value: int(overview.published_episodes) },
+    { title: t("dashboard.pending_episodes"), value: int(overview.episodes_awaiting_publish), isPending: true },
+    { title: t("dashboard.pending_comments"), value: int(overview.pending_comments), isPending: true },
+    { title: t("dashboard.total_plays"), value: int(overview.lifetime_plays), isHighlight: true },
+    { title: t("dashboard.total_revenue"), value: money(overview.lifetime_revenue_cents), isHighlight: true },
   ];
 
   return (
@@ -408,13 +409,13 @@ export function DashboardPage() {
       <Space style={{ width: "100%", justifyContent: "space-between" }} wrap align="center">
         <Space align="center" size={10} wrap>
           <Typography.Title level={4} style={{ margin: 0 }}>
-            数据看板
+            {t("dashboard.title")}
           </Typography.Title>
           <Tag bordered={false} style={{ background: "#eff8ff", color: "#175cd3", borderRadius: 12, padding: "2px 10px", margin: 0 }}>
-            {data.timezone ?? "America/Los_Angeles"} (美西时区)
+            {t("dashboard.west_coast_tz", {v0: data.timezone ?? "America/Los_Angeles"})}
           </Tag>
           <Tag bordered={false} style={{ background: "#f2f4f7", color: "#475467", borderRadius: 12, margin: 0 }}>
-            指标日：{data.day ?? "-"}
+            {t("dashboard.metric_day", {v0: data.day ?? "-"})}
           </Tag>
         </Space>
         <Space wrap size={10}>
@@ -432,13 +433,13 @@ export function DashboardPage() {
             onChange={setDays}
             style={{ width: 110 }}
             options={[
-              { value: 7, label: "近 7 天" },
-              { value: 14, label: "近 14 天" },
-              { value: 30, label: "近 30 天" },
+              { value: 7, label: t("dashboard.last_7_days") },
+              { value: 14, label: t("dashboard.last_14_days") },
+              { value: 30, label: t("dashboard.last_30_days") },
             ]}
           />
           <Button icon={<ReloadOutlined />} onClick={reload} loading={loading} style={{ borderRadius: 6 }}>
-            刷新
+            {t("common.refresh")}
           </Button>
         </Space>
       </Space>
@@ -449,7 +450,7 @@ export function DashboardPage() {
         showIcon
         message={
           <span style={{ fontSize: 13, color: "#475467" }}>
-            业务日统一按洛杉矶时区切分；指标全部来自线上真实事件打点（播放 / 支付订单 / 金币流水），环比自动对比前一天。
+            {t("dashboard.timezone_note")}
           </span>
         }
         style={{
@@ -459,7 +460,7 @@ export function DashboardPage() {
         }}
       />
 
-      {error ? <Alert type="error" showIcon message="看板加载失败" description={error} /> : null}
+      {error ? <Alert type="error" showIcon message={t("dashboard.load_failed")} description={error} /> : null}
 
       {loading && trend.length === 0 ? (
         <Skeleton active paragraph={{ rows: 8 }} />
@@ -486,9 +487,9 @@ export function DashboardPage() {
             bordered
             title={
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontWeight: 600, fontSize: 15 }}>全站累计与待办事项</span>
+                <span style={{ fontWeight: 600, fontSize: 15 }}>{t("dashboard.site_totals_todos")}</span>
                 <Tag bordered={false} style={{ background: "#f2f4f7", color: "#667085", borderRadius: 10, fontSize: 11, margin: 0 }}>
-                  业务概览
+                  {t("dashboard.business_overview")}
                 </Tag>
               </div>
             }
@@ -539,7 +540,7 @@ export function DashboardPage() {
                 bordered
                 title={
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontWeight: 600, fontSize: 15 }}>播放次数趋势</span>
+                    <span style={{ fontWeight: 600, fontSize: 15 }}>{t("dashboard.plays_trend")}</span>
                     <Tag bordered={false} style={{ background: "#f2f4f7", color: "#667085", borderRadius: 10, fontSize: 11, margin: 0 }}>
                       {data.window?.start ?? "-"} ~ {data.window?.end ?? "-"}
                     </Tag>
@@ -553,7 +554,7 @@ export function DashboardPage() {
                   background: "#fff",
                 }}
               >
-                <MiniBars rows={trend} pick={(row) => row.plays} color="#E53B3E" format={(val) => `${val} 次`} />
+                <MiniBars rows={trend} pick={(row) => row.plays} color="#E53B3E" format={(val) => t("dashboard.times_format", {v0: val})} />
               </Card>
             </Col>
             <Col xs={24} md={12}>
@@ -561,9 +562,9 @@ export function DashboardPage() {
                 bordered
                 title={
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontWeight: 600, fontSize: 15 }}>营收趋势</span>
+                    <span style={{ fontWeight: 600, fontSize: 15 }}>{t("dashboard.revenue_trend")}</span>
                     <Tag bordered={false} style={{ background: "#edfcf2", color: "#027a48", borderRadius: 10, fontSize: 11, margin: 0 }}>
-                      支付结算
+                      {t("dashboard.payment_settlement")}
                     </Tag>
                   </div>
                 }
@@ -583,7 +584,7 @@ export function DashboardPage() {
           {/* 趋势明细表格 */}
           <Card
             bordered
-            title={<span style={{ fontWeight: 600, fontSize: 15 }}>趋势明细</span>}
+            title={<span style={{ fontWeight: 600, fontSize: 15 }}>{t("dashboard.trend_details")}</span>}
             styles={{ body: { padding: 0 }, header: { borderBottom: "1px solid #eaecf0", padding: "12px 20px" } }}
             style={{
               borderRadius: 12,
@@ -601,34 +602,34 @@ export function DashboardPage() {
               scroll={{ x: 920 }}
               columns={[
                 {
-                  title: "日期",
+                  title: t("dashboard.date"),
                   dataIndex: "day",
                   fixed: "left",
                   width: 120,
                   render: (v: string) => <span style={{ fontWeight: 600, color: "#101828" }}>{v}</span>,
                 },
                 {
-                  title: "新增用户",
+                  title: t("dashboard.new_users"),
                   dataIndex: "new_users",
                   render: (v: number) => <span style={{ fontVariantNumeric: "tabular-nums" }}>{v}</span>,
                 },
                 {
-                  title: "活跃用户",
+                  title: t("dashboard.active_users"),
                   dataIndex: "active_users",
                   render: (v: number) => <span style={{ fontVariantNumeric: "tabular-nums" }}>{v}</span>,
                 },
                 {
-                  title: "播放",
+                  title: t("dashboard.plays"),
                   dataIndex: "plays",
                   render: (v: number) => <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>{v}</span>,
                 },
                 {
-                  title: "完播",
+                  title: t("dashboard.completions"),
                   dataIndex: "completes",
                   render: (v: number) => <span style={{ fontVariantNumeric: "tabular-nums" }}>{v}</span>,
                 },
                 {
-                  title: "完播率",
+                  title: t("common.completion_rate"),
                   dataIndex: "completion_rate",
                   render: (v: number) => (
                     <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: v > 0 ? "#12b76a" : "#667085" }}>
@@ -637,12 +638,12 @@ export function DashboardPage() {
                   ),
                 },
                 {
-                  title: "付费订单",
+                  title: t("dashboard.paid_orders"),
                   dataIndex: "paid_orders",
                   render: (v: number) => <span style={{ fontVariantNumeric: "tabular-nums" }}>{v}</span>,
                 },
                 {
-                  title: "营收",
+                  title: t("dashboard.revenue"),
                   dataIndex: "revenue_cents",
                   render: (v: number) => (
                     <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: v > 0 ? "#027a48" : "#667085" }}>
@@ -651,12 +652,12 @@ export function DashboardPage() {
                   ),
                 },
                 {
-                  title: "金币消耗",
+                  title: t("dashboard.coins_spent"),
                   dataIndex: "coin_spend",
                   render: (v: number) => <span style={{ fontVariantNumeric: "tabular-nums" }}>{v}</span>,
                 },
                 {
-                  title: "解锁次数",
+                  title: t("dashboard.unlocks_count"),
                   dataIndex: "unlock_count",
                   render: (v: number) => <span style={{ fontVariantNumeric: "tabular-nums" }}>{v}</span>,
                 },
@@ -671,9 +672,9 @@ export function DashboardPage() {
                 bordered
                 title={
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontWeight: 600, fontSize: 15 }}>热门剧集</span>
+                    <span style={{ fontWeight: 600, fontSize: 15 }}>{t("dashboard.top_dramas")}</span>
                     <Tag bordered={false} style={{ background: "#f2f4f7", color: "#667085", borderRadius: 10, fontSize: 11, margin: 0 }}>
-                      窗口内真实播放
+                      {t("dashboard.real_plays_in_window")}
                     </Tag>
                   </div>
                 }
@@ -691,10 +692,10 @@ export function DashboardPage() {
                   loading={loading}
                   dataSource={data.top_dramas ?? []}
                   pagination={false}
-                  locale={{ emptyText: "窗口内暂无播放数据" }}
+                  locale={{ emptyText: t("dashboard.no_plays_in_window") }}
                   columns={[
                     {
-                      title: "排行",
+                      title: t("dashboard.rank"),
                       key: "rank",
                       width: 64,
                       render: (_, __, index) => {
@@ -725,7 +726,7 @@ export function DashboardPage() {
                       },
                     },
                     {
-                      title: "剧集",
+                      title: t("drama.drama"),
                       dataIndex: "title",
                       render: (title: string, row) => (
                         <Link to={`/dramas/${row.id}`} style={{ fontWeight: 600, color: "#101828" }}>
@@ -734,19 +735,19 @@ export function DashboardPage() {
                       ),
                     },
                     {
-                      title: "播放",
+                      title: t("dashboard.plays"),
                       dataIndex: "plays",
                       width: 80,
                       render: (v: number) => <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 500 }}>{v}</span>,
                     },
                     {
-                      title: "完播",
+                      title: t("dashboard.completions"),
                       dataIndex: "completes",
                       width: 80,
                       render: (v: number) => <span style={{ fontVariantNumeric: "tabular-nums" }}>{v}</span>,
                     },
                     {
-                      title: "完播率",
+                      title: t("common.completion_rate"),
                       dataIndex: "completion_rate",
                       width: 100,
                       render: (v: number) => (
@@ -764,9 +765,9 @@ export function DashboardPage() {
                 bordered
                 title={
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontWeight: 600, fontSize: 15 }}>最近订单</span>
+                    <span style={{ fontWeight: 600, fontSize: 15 }}>{t("dashboard.recent_orders")}</span>
                     <Tag bordered={false} style={{ background: "#edfcf2", color: "#027a48", borderRadius: 10, fontSize: 11, margin: 0 }}>
-                      实时成交
+                      {t("dashboard.live_sales")}
                     </Tag>
                   </div>
                 }
@@ -785,17 +786,17 @@ export function DashboardPage() {
                   dataSource={data.recent_orders ?? []}
                   pagination={false}
                   scroll={{ x: 560 }}
-                  locale={{ emptyText: "暂无订单数据" }}
+                  locale={{ emptyText: t("dashboard.no_orders_data") }}
                   columns={[
                     {
-                      title: "订单号",
+                      title: t("finance.order_no"),
                       dataIndex: "order_no",
                       render: (v: string) => (
                         <span style={{ fontFamily: "monospace", fontSize: 12, color: "#475467" }}>{v}</span>
                       ),
                     },
                     {
-                      title: "用户",
+                      title: t("users.user"),
                       dataIndex: "user_id",
                       width: 90,
                       render: (v: number) => (
@@ -803,7 +804,7 @@ export function DashboardPage() {
                       ),
                     },
                     {
-                      title: "金额",
+                      title: t("finance.amount"),
                       dataIndex: "amount_cents",
                       width: 100,
                       render: (v: number) => (
@@ -813,7 +814,7 @@ export function DashboardPage() {
                       ),
                     },
                     {
-                      title: "状态",
+                      title: t("common.status"),
                       dataIndex: "status",
                       width: 90,
                       render: (value: string) => (
@@ -827,12 +828,12 @@ export function DashboardPage() {
                             margin: 0,
                           }}
                         >
-                          {value === "paid" ? "已支付" : value}
+                          {value === "paid" ? t("finance.paid") : value}
                         </Tag>
                       ),
                     },
                     {
-                      title: "时间",
+                      title: t("finance.time"),
                       dataIndex: "created_at",
                       width: 150,
                       render: formatTime,
@@ -868,12 +869,12 @@ type AdminUserRow = {
   created_at: string;
 };
 
-const GENDER_OPTIONS = [
-  { value: "unspecified", label: "未设置" },
-  { value: "female", label: "女性" },
-  { value: "male", label: "男性" },
-  { value: "other", label: "其他" },
-];
+function GENDER_OPTIONS(){ return [
+  { value: "unspecified", label: t("users.gender_unspecified") },
+  { value: "female", label: t("users.female") },
+  { value: "male", label: t("users.male") },
+  { value: "other", label: t("users.other") },
+];; }
 
 const LOCALE_OPTIONS = ["en", "zh", "ja", "ko", "es", "pt"].map((value) => ({ value, label: value }));
 
@@ -914,7 +915,7 @@ function CoinAdjustModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
         method: "POST",
         body: JSON.stringify({ delta: direction === "add" ? values.amount : -values.amount, reason: values.reason.trim() }),
       });
-      onSaved(`已入账：${res.before} → ${res.after} 金币`);
+      onSaved(t("users.coins_credited", {v0: res.before, v1: res.after}));
     } catch (e: any) {
       message.error(errorText(e));
       setSaving(false);
@@ -924,9 +925,9 @@ function CoinAdjustModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
   return (
     <Modal
       open
-      title="调整金币"
-      okText="确认调账"
-      cancelText="取消"
+      title={t("users.adjust_coins")}
+      okText={t("users.confirm_adjustment")}
+      cancelText={t("common.cancel")}
       confirmLoading={saving}
       okButtonProps={{ disabled: negative }}
       onOk={submit}
@@ -936,7 +937,7 @@ function CoinAdjustModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
         <Card size="small" style={{ background: "#fafafa" }}>
           <Space size={16} wrap>
             <span>
-              <Typography.Text type="secondary">用户：</Typography.Text>
+              <Typography.Text type="secondary">{t("users.user_label")}</Typography.Text>
               <Typography.Text strong>{user.display_name}</Typography.Text>
             </span>
             <span>
@@ -944,7 +945,7 @@ function CoinAdjustModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
               {user.public_id || user.id}
             </span>
             <span>
-              <Typography.Text type="secondary">当前余额：</Typography.Text>
+              <Typography.Text type="secondary">{t("users.current_balance")}</Typography.Text>
               <Typography.Text strong>{user.coins}</Typography.Text>
             </span>
           </Space>
@@ -955,38 +956,38 @@ function CoinAdjustModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
           initialValues={{ amount: 100, reason: "" }}
           onFinish={submit}
         >
-          <Form.Item label="调整方式">
+          <Form.Item label={t("users.adjustment_method")}>
             <Radio.Group value={direction} onChange={(e) => setDirection(e.target.value)} optionType="button" buttonStyle="solid">
-              <Radio.Button value="add">增加金币</Radio.Button>
-              <Radio.Button value="sub">扣减金币</Radio.Button>
+              <Radio.Button value="add">{t("users.add_coins")}</Radio.Button>
+              <Radio.Button value="sub">{t("users.deduct_coins")}</Radio.Button>
             </Radio.Group>
           </Form.Item>
           <Form.Item
             name="amount"
-            label="数量"
+            label={t("users.quantity")}
             rules={[
-              { required: true, message: "请输入数量" },
-              { type: "number", min: 1, message: "数量需大于 0" },
+              { required: true, message: t("users.enter_quantity") },
+              { type: "number", min: 1, message: t("users.quantity_gt_zero") },
             ]}
           >
-            <InputNumber min={1} precision={0} style={{ width: 160 }} placeholder="金币数量" />
+            <InputNumber min={1} precision={0} style={{ width: 160 }} placeholder={t("users.coins_quantity")} />
           </Form.Item>
           <Space size={8} style={{ marginTop: -8, marginBottom: 14 }}>
-            <Typography.Text type="secondary">快捷：</Typography.Text>
+            <Typography.Text type="secondary">{t("users.quick_label")}</Typography.Text>
             {[100, 200, 500].map((value) => (
               <Button key={value} size="small" onClick={() => form.setFieldValue("amount", value)}>
                 {value}
               </Button>
             ))}
           </Space>
-          <Form.Item name="reason" label="原因" rules={[{ required: true, whitespace: true, message: "请填写调账原因" }]}>
-            <Input placeholder="如：活动补发 / 客诉补偿" maxLength={200} />
+          <Form.Item name="reason" label={t("finance.reason")} rules={[{ required: true, whitespace: true, message: t("users.enter_adjust_reason") }]}>
+            <Input placeholder={t("users.adjust_reason_example")} maxLength={200} />
           </Form.Item>
         </Form>
         {negative ? (
-          <Alert type="error" showIcon message={`扣减后余额为 ${after}，余额不能为负，请减少扣减数量。`} />
+          <Alert type="error" showIcon message={t("users.deduct_negative_warning", {v0: after})} />
         ) : (
-          <Alert type="info" showIcon message={`调整后余额：${user.coins} → ${after}`} />
+          <Alert type="info" showIcon message={t("users.balance_after_adjust", {v0: user.coins, v1: after})} />
         )}
       </Space>
     </Modal>
@@ -1004,7 +1005,7 @@ function UserEditModal({ user, onClose, onSaved }: { user: AdminUserRow; onClose
     setSaving(true);
     try {
       await api(`/admin/v1/users/${user.id}`, { method: "PATCH", body: JSON.stringify(values) });
-      onSaved(`已更新「${values.display_name || user.display_name}」的资料`);
+      onSaved(t("users.profile_updated", {v0: values.display_name || user.display_name}));
     } catch (e: any) {
       message.error(errorText(e));
       setSaving(false);
@@ -1014,9 +1015,9 @@ function UserEditModal({ user, onClose, onSaved }: { user: AdminUserRow; onClose
   return (
     <Modal
       open
-      title={`编辑用户 · ${user.display_name}`}
-      okText="保存"
-      cancelText="取消"
+      title={t("users.edit_user_title", {v0: user.display_name})}
+      okText={t("common.save")}
+      cancelText={t("common.cancel")}
       width={560}
       confirmLoading={saving}
       onOk={submit}
@@ -1037,45 +1038,45 @@ function UserEditModal({ user, onClose, onSaved }: { user: AdminUserRow; onClose
       >
         <Row gutter={16}>
           <Col xs={24} sm={12}>
-            <Form.Item name="display_name" label="昵称" rules={[{ required: true, whitespace: true, message: "昵称不能为空", max: 64 }]}>
-              <Input maxLength={64} placeholder="用户昵称" />
+            <Form.Item name="display_name" label={t("users.nickname")} rules={[{ required: true, whitespace: true, message: t("users.nickname_required"), max: 64 }]}>
+              <Input maxLength={64} placeholder={t("users.nickname_placeholder")} />
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
             <Form.Item
               name="email"
-              label="邮箱"
-              tooltip="留空表示解绑邮箱"
-              rules={[{ type: "email", message: "邮箱格式不正确" }]}
+              label={t("common.email")}
+              tooltip={t("users.blank_unbinds_email")}
+              rules={[{ type: "email", message: t("users.invalid_email_format") }]}
             >
               <Input maxLength={320} placeholder="user@example.com" allowClear />
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
-            <Form.Item name="gender" label="性别">
-              <Select options={GENDER_OPTIONS} />
+            <Form.Item name="gender" label={t("users.gender")}>
+              <Select options={GENDER_OPTIONS()} />
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
-            <Form.Item name="region" label="地区" tooltip="两位国家 / 地区码，如 US、HK">
+            <Form.Item name="region" label={t("users.region")} tooltip={t("users.region_code_hint")}>
               <Input maxLength={8} placeholder="US" />
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
-            <Form.Item name="locale" label="语言">
+            <Form.Item name="locale" label={t("users.language")}>
               <Select options={LOCALE_OPTIONS} />
             </Form.Item>
           </Col>
           <Col xs={24} sm={12}>
-            <Form.Item name="avatar_url" label="头像地址">
+            <Form.Item name="avatar_url" label={t("users.avatar_url")}>
               <Input maxLength={500} placeholder="https://…" allowClear />
             </Form.Item>
           </Col>
         </Row>
-        <Form.Item name="bio" label="简介">
-          <Input.TextArea rows={3} maxLength={500} showCount placeholder="用户自我介绍" />
+        <Form.Item name="bio" label={t("drama.synopsis")}>
+          <Input.TextArea rows={3} maxLength={500} showCount placeholder={t("users.bio_placeholder")} />
         </Form.Item>
-        <Typography.Text type="secondary">用户 ID / 金币 / 会员状态不能在此修改；金币请使用「调账」，会员请使用「会员」。</Typography.Text>
+        <Typography.Text type="secondary">{t("users.edit_restriction_note")}</Typography.Text>
       </Form>
     </Modal>
   );
@@ -1165,9 +1166,9 @@ function MembershipModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
   const planOptions = plans.items.length
     ? plans.items.map((item) => ({
         code: item.code,
-        label: `${item.name_zh || item.name_en} · ${PLAN_DAYS[item.code] ?? "?"} 天`,
+        label: t("plans.plan_days_label", {v0: item.name_zh || item.name_en, v1: PLAN_DAYS[item.code] ?? "?"}),
       }))
-    : Object.keys(PLAN_DAYS).map((code) => ({ code, label: `${code} · ${PLAN_DAYS[code]} 天` }));
+    : Object.keys(PLAN_DAYS).map((code) => ({ code, label: t("plans.plan_days_label", {v0: code, v1: PLAN_DAYS[code]}) }));
 
   const remainDays =
     detail?.active && detail.until
@@ -1190,7 +1191,7 @@ function MembershipModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
           reason: values.reason.trim(),
         }),
       });
-      onSaved(`已开通 ${res.added_days} 天，到期 ${formatTime(res.after_until)}`);
+      onSaved(t("users.membership_granted", {v0: res.added_days, v1: formatTime(res.after_until)}));
     } catch (e: any) {
       message.error(errorText(e));
       setGranting(false);
@@ -1207,7 +1208,7 @@ function MembershipModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
         body: JSON.stringify({ mode: values.mode, reason: values.reason.trim() }),
       });
       onSaved(
-        res.mode === "now" ? "已立即收回会员权益" : `已设为到期不续费，权益保留至 ${formatTime(res.after_until)}`,
+        res.mode === "now" ? t("users.membership_revoked_now") : t("users.membership_expire_no_renew", {v0: formatTime(res.after_until)}),
       );
     } catch (e: any) {
       message.error(errorText(e));
@@ -1218,16 +1219,16 @@ function MembershipModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
   return (
     <Modal
       open
-      title={`会员 · ${user.display_name}`}
+      title={t("users.membership_title", {v0: user.display_name})}
       width={560}
       onCancel={onClose}
-      footer={<Button onClick={onClose}>关闭</Button>}
+      footer={<Button onClick={onClose}>{t("common.close")}</Button>}
       styles={{ body: { maxHeight: "calc(100vh - 200px)", overflowY: "auto", paddingRight: 4 } }}
     >
       {loading ? (
         <Skeleton active paragraph={{ rows: 5 }} />
       ) : !detail ? (
-        <Alert type="error" showIcon message="会员信息加载失败，请关闭后重试" />
+        <Alert type="error" showIcon message={t("users.membership_load_failed")} />
       ) : (
         <Space direction="vertical" size={14} style={{ width: "100%" }}>
           <Card size="small" style={{ background: "#fafafa" }} styles={{ body: { padding: 12 } }}>
@@ -1237,39 +1238,39 @@ function MembershipModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
                   color={detail.active ? (detail.canceling ? "orange" : "green") : "default"}
                   style={{ marginInlineEnd: 0 }}
                 >
-                  {detail.active ? (detail.canceling ? "到期不续" : "有效") : "无"}
+                  {detail.active ? (detail.canceling ? t("users.expire_no_renew") : t("common.active")) : t("common.none")}
                 </Tag>
                 <Typography.Text>
-                  {detail.until ? `至 ${formatTime(detail.until)}` : "未开通会员"}
+                  {detail.until ? t("users.valid_until", {v0: formatTime(detail.until)}) : t("users.no_membership")}
                 </Typography.Text>
                 {detail.active && detail.source ? (
                   <Tag style={{ marginInlineEnd: 0 }}>
-                    {detail.source === "subscription" ? "订阅" : "时长包"}
+                    {detail.source === "subscription" ? t("finance.subscription") : t("finance.duration_pack")}
                   </Tag>
                 ) : null}
                 {detail.plan_name ? <Typography.Text type="secondary">{detail.plan_name}</Typography.Text> : null}
               </Space>
               {detail.active && detail.has_stripe_subscription ? (
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                  订阅周期至 {formatTime(detail.subscription_until)}
-                  {detail.pass_until ? ` · 时长包至 ${formatTime(detail.pass_until)}` : ""}
+                  {t("users.subscription_until", {v0: formatTime(detail.subscription_until)})}
+                  {detail.pass_until ? t("users.duration_pack_until", {v0: formatTime(detail.pass_until)}) : ""}
                 </Typography.Text>
               ) : null}
               {detail.last_adjust ? (
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                  最近后台调整：
+                  {t("users.last_admin_adjustment")}
                   {detail.last_adjust.actor_name || `#${detail.last_adjust.actor_id}`} ·{" "}
                   {formatTime(detail.last_adjust.at)} ·{" "}
                   {detail.last_adjust.action === "membership_grant"
-                    ? `赠送 ${detail.last_adjust.payload?.days ?? "?"} 天（${detail.last_adjust.payload?.reason ?? "-"}）`
-                    : `取消会员（${detail.last_adjust.payload?.reason ?? "-"}）`}
+                    ? t("users.gifted_days", {v0: detail.last_adjust.payload?.days ?? "?", v1: detail.last_adjust.payload?.reason ?? "-"})
+                    : t("users.cancel_membership_note", {v0: detail.last_adjust.payload?.reason ?? "-"})}
                 </Typography.Text>
               ) : null}
             </Space>
           </Card>
 
           {!isAdmin ? (
-            <Alert type="info" showIcon message="仅管理员可调整会员，当前账号只读。" />
+            <Alert type="info" showIcon message={t("users.admin_only_membership")} />
           ) : (
             <>
               <Form
@@ -1278,7 +1279,7 @@ function MembershipModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
                 initialValues={{ plan_code: "monthly", days: 30, mode: "extend", reason: "" }}
                 onFinish={submitGrant}
               >
-                <Form.Item name="plan_code" label="套餐">
+                <Form.Item name="plan_code" label={t("plans.plan")}>
                   <Radio.Group optionType="button" buttonStyle="solid">
                     {planOptions.map((item) => (
                       <Radio.Button key={item.code} value={item.code}>
@@ -1291,30 +1292,30 @@ function MembershipModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
                   <Col span={8}>
                     <Form.Item
                       name="days"
-                      label="时长（天）"
+                      label={t("users.duration_days")}
                       rules={[
-                        { required: true, message: "请输入天数" },
-                        { type: "number", min: 1, max: 3650, message: "1–3650 天" },
+                        { required: true, message: t("users.enter_days") },
+                        { type: "number", min: 1, max: 3650, message: t("users.days_range") },
                       ]}
                     >
                       <InputNumber min={1} max={3650} precision={0} style={{ width: "100%" }} />
                     </Form.Item>
                   </Col>
                   <Col span={16}>
-                    <Form.Item name="mode" label="开通方式">
+                    <Form.Item name="mode" label={t("users.grant_method")}>
                       <Radio.Group optionType="button" buttonStyle="solid">
-                        <Radio.Button value="extend">顺延</Radio.Button>
-                        <Radio.Button value="restart">从今天重算</Radio.Button>
+                        <Radio.Button value="extend">{t("users.extend")}</Radio.Button>
+                        <Radio.Button value="restart">{t("users.restart_today")}</Radio.Button>
                       </Radio.Group>
                     </Form.Item>
                   </Col>
                 </Row>
                 <Form.Item
                   name="reason"
-                  label="原因"
-                  rules={[{ required: true, whitespace: true, message: "请填写调整原因" }]}
+                  label={t("finance.reason")}
+                  rules={[{ required: true, whitespace: true, message: t("users.enter_membership_reason") }]}
                 >
-                  <Input maxLength={200} placeholder="如：客诉补偿 / 活动赠送" />
+                  <Input maxLength={200} placeholder={t("users.membership_reason_example")} />
                 </Form.Item>
                 <Alert
                   type={overwrite ? "warning" : "info"}
@@ -1322,12 +1323,15 @@ function MembershipModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
                   style={{ marginBottom: 12 }}
                   message={
                     overwrite
-                      ? `将从今天起算，覆盖剩余 ${remainDays} 天 → ${formatTime(after.toISOString())}`
-                      : `到期时间 ${detail.until ? formatTime(detail.until) : "（未开通）"} → ${formatTime(after.toISOString())}`
+                      ? t("users.restart_overrides", {v0: remainDays, v1: formatTime(after.toISOString())})
+                      : t("users.expiry_change", {
+                          v0: detail.until ? formatTime(detail.until) : t("users.not_activated"),
+                          v1: formatTime(after.toISOString()),
+                        })
                   }
                 />
                 <Button type="primary" htmlType="submit" loading={granting} block>
-                  确认开通
+                  {t("users.confirm_grant")}
                 </Button>
               </Form>
 
@@ -1336,10 +1340,10 @@ function MembershipModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
                   {/* 默认折叠：收回权益是低频操作，展开才占版面，也少一次误点。 */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Typography.Text strong style={{ color: "#cf1322" }}>
-                      危险操作
+                      {t("users.dangerous_action")}
                     </Typography.Text>
                     <Button type="link" size="small" danger onClick={() => setShowRevoke((value) => !value)}>
-                      {showRevoke ? "收起" : "取消会员"}
+                      {showRevoke ? t("users.collapse") : t("users.cancel_membership")}
                     </Button>
                   </div>
                   {showRevoke ? (
@@ -1350,33 +1354,33 @@ function MembershipModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
                         style={{ marginTop: 8 }}
                         initialValues={{ mode: detail.has_stripe_subscription ? "period_end" : "now", reason: "" }}
                       >
-                        <Form.Item name="mode" label="方式">
+                        <Form.Item name="mode" label={t("users.method")}>
                           <Radio.Group>
-                            <Radio value="now">立即收回（当天失效）</Radio>
+                            <Radio value="now">{t("users.revoke_now")}</Radio>
                             <Radio value="period_end" disabled={!detail.has_stripe_subscription}>
-                              到期不续费
+                              {t("users.no_renew_at_expiry")}
                             </Radio>
                           </Radio.Group>
                         </Form.Item>
                         <Form.Item
                           name="reason"
-                          label="原因"
-                          rules={[{ required: true, whitespace: true, message: "请填写取消原因" }]}
+                          label={t("finance.reason")}
+                          rules={[{ required: true, whitespace: true, message: t("users.enter_cancel_reason") }]}
                         >
-                          <Input maxLength={200} placeholder="如：误开通 / 退款处理" />
+                          <Input maxLength={200} placeholder={t("users.cancel_reason_example")} />
                         </Form.Item>
                       </Form>
                       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                         {detail.has_stripe_subscription
-                          ? "会同步取消 Stripe 自动续费；立即收回不退款，退款需到 Stripe 后台处理。"
-                          : "时长包没有续费概念，只能立即收回；已消耗的时长不退款。"}
+                          ? t("users.stripe_cancel_note")
+                          : t("users.duration_pack_revoke_note")}
                       </Typography.Text>
                       <Checkbox
                         checked={confirmed}
                         onChange={(e) => setConfirmed(e.target.checked)}
                         style={{ marginTop: 10, display: "block" }}
                       >
-                        我确认收回该用户权益
+                        {t("users.confirm_revoke_rights")}
                       </Checkbox>
                       <Button
                         danger
@@ -1387,7 +1391,7 @@ function MembershipModal({ user, onClose, onSaved }: { user: AdminUserRow; onClo
                         loading={revoking}
                         onClick={submitRevoke}
                       >
-                        确认收回
+                        {t("users.confirm_revoke")}
                       </Button>
                     </>
                   ) : null}
@@ -1427,24 +1431,24 @@ export function UsersPage() {
     reload();
   };
 
-  const adminOnly = isAdmin ? "" : "仅管理员可操作";
+  const adminOnly = isAdmin ? "" : t("users.admin_only");
 
   return (
     <Space direction="vertical" size={16} style={{ width: "100%" }}>
-      <Typography.Title level={4} style={{ margin: 0 }}>用户管理</Typography.Title>
+      <Typography.Title level={4} style={{ margin: 0 }}>{t("users.title")}</Typography.Title>
       <Card
-        title={query ? `用户列表 · 搜索「${query}」` : "用户列表"}
+        title={query ? t("users.list_search_title", {v0: query}) : t("users.list_title")}
         extra={
           <Space>
             <Input.Search
               allowClear
-              placeholder="昵称 / ID / 邮箱"
+              placeholder={t("users.search_placeholder")}
               style={{ width: 240 }}
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               onSearch={(value) => setQuery(value.trim())}
             />
-            <Button onClick={() => reload()} loading={loading}>刷新</Button>
+            <Button onClick={() => reload()} loading={loading}>{t("common.refresh")}</Button>
           </Space>
         }
       >
@@ -1454,10 +1458,10 @@ export function UsersPage() {
           loading={loading}
           size="middle"
           scroll={{ x: 1060 }}
-          locale={{ emptyText: query ? `没有匹配「${query}」的用户` : "暂无用户" }}
-          pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 位用户` }}
+          locale={{ emptyText: query ? t("users.no_match", {v0: query}) : t("users.no_users") }}
+          pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => t("users.total_users", {v0: total}) }}
           columns={[
-            { title: "用户", dataIndex: "display_name", width: 240, render: (_, row) => <UserCell row={row} /> },
+            { title: t("users.user"), dataIndex: "display_name", width: 240, render: (_, row) => <UserCell row={row} /> },
             {
               title: "ID",
               dataIndex: "public_id",
@@ -1469,7 +1473,7 @@ export function UsersPage() {
               ),
             },
             {
-              title: "金币",
+              title: t("common.coins_unit"),
               dataIndex: "coins",
               width: 100,
               align: "right",
@@ -1477,7 +1481,7 @@ export function UsersPage() {
               render: (value: number) => <Typography.Text strong>{value}</Typography.Text>,
             },
             {
-              title: "会员",
+              title: t("users.member"),
               dataIndex: "member",
               width: 230,
               render: (value: boolean, row) => (
@@ -1486,30 +1490,30 @@ export function UsersPage() {
                     color={value ? (row.canceling ? "orange" : "green") : "default"}
                     style={{ marginInlineEnd: 0 }}
                   >
-                    {value ? (row.canceling ? "到期不续" : "有效") : "无"}
+                    {value ? (row.canceling ? t("users.expire_no_renew") : t("common.active")) : t("common.none")}
                   </Tag>
                   {value ? (
                     <>
                       <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                        至 {formatTime(row.member_until)}
+                        {t("users.valid_until", {v0: formatTime(row.member_until)})}
                       </Typography.Text>
                       {row.billing_mode ? (
                         <Tag style={{ marginInlineEnd: 0, fontSize: 11 }}>
-                          {row.billing_mode === "subscription" ? "订阅" : "时长包"}
+                          {row.billing_mode === "subscription" ? t("finance.subscription") : t("finance.duration_pack")}
                         </Tag>
                       ) : null}
                     </>
                   ) : (
                     <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                      未开通
+                      {t("users.not_granted")}
                     </Typography.Text>
                   )}
                 </Space>
               ),
             },
-            { title: "注册时间", dataIndex: "created_at", width: 160, render: (v: string) => formatTime(v) },
+            { title: t("users.registered_at"), dataIndex: "created_at", width: 160, render: (v: string) => formatTime(v) },
             {
-              title: "操作",
+              title: t("common.actions"),
               key: "action",
               width: 200,
               fixed: "right",
@@ -1517,16 +1521,16 @@ export function UsersPage() {
                 <Space size={0}>
                   <Tooltip title={adminOnly}>
                     <Button type="link" size="small" disabled={!isAdmin} onClick={() => setCoinTarget(row)}>
-                      调账
+                      {t("users.adjust_balance")}
                     </Button>
                   </Tooltip>
                   <Tooltip title={adminOnly}>
                     <Button type="link" size="small" disabled={!isAdmin} onClick={() => setEditTarget(row)}>
-                      编辑
+                      {t("common.edit")}
                     </Button>
                   </Tooltip>
                   <Button type="link" size="small" onClick={() => setMemberTarget(row)}>
-                    {row.member ? "会员" : isAdmin ? "开通" : "会员"}
+                    {row.member ? t("users.member") : isAdmin ? t("users.grant") : t("users.member")}
                   </Button>
                 </Space>
               ),
@@ -1541,17 +1545,17 @@ export function UsersPage() {
   );
 }
 
-const COMMENT_STATUS: Record<string, { color: string; label: string }> = {
-  approved: { color: "green", label: "已发布" },
-  pending: { color: "orange", label: "待审核" },
-  deleted: { color: "red", label: "已删除" },
-};
+function COMMENT_STATUS(): Record<string, { color: string; label: string }> { return {
+  approved: { color: "green", label: t("drama.published_status") },
+  pending: { color: "orange", label: t("common.pending_review") },
+  deleted: { color: "red", label: t("common.deleted") },
+};; }
 
-const MODERATION_VERDICT: Record<string, { color: string; label: string }> = {
-  allow: { color: "green", label: "通过" },
-  review: { color: "orange", label: "转人工" },
-  block: { color: "red", label: "拦截" },
-};
+function MODERATION_VERDICT(): Record<string, { color: string; label: string }> { return {
+  allow: { color: "green", label: t("moderation.approve") },
+  review: { color: "orange", label: t("moderation.escalate_manual") },
+  block: { color: "red", label: t("moderation.block") },
+};; }
 
 type CommentRow = {
   id: number;
@@ -1571,12 +1575,12 @@ type CommentRow = {
   moderation_state: string | null;
 };
 
-const COMMENT_TABS = [
-  { label: "全部", value: "" },
-  { label: "待审核", value: "pending" },
-  { label: "已发布", value: "approved" },
-  { label: "已删除", value: "deleted" },
-];
+function COMMENT_TABS(){ return [
+  { label: t("common.all"), value: "" },
+  { label: t("common.pending_review"), value: "pending" },
+  { label: t("drama.published_status"), value: "approved" },
+  { label: t("common.deleted"), value: "deleted" },
+];; }
 
 type CommentCounts = { pending: number; approved: number; deleted: number; total: number };
 
@@ -1607,7 +1611,7 @@ export function CommentsPage() {
     if (q.trim()) params.set("q", q.trim());
     api<{ items: CommentRow[]; total: number; counts?: CommentCounts }>(`/admin/v1/comments?${params}`)
       .then(setData)
-      .catch((e) => message.error(`读取评论失败：${errorText(e)}`))
+      .catch((e) => message.error(t("comments.load_failed", {v0: errorText(e)})))
       .finally(() => setLoading(false));
   };
 
@@ -1622,10 +1626,10 @@ export function CommentsPage() {
         method: "POST",
         body: JSON.stringify({ status: next }),
       });
-      message.success(next === "approved" ? "已通过，客户端立即可见" : "已删除，客户端刷新后不可见");
+      message.success(next === "approved" ? t("comments.approved_visible") : t("comments.deleted_hidden"));
       load();
     } catch (e) {
-      message.error(`操作失败：${errorText(e)}`);
+      message.error(t("comments.action_failed", {v0: errorText(e)}));
     }
   };
 
@@ -1634,16 +1638,16 @@ export function CommentsPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
         <Space direction="vertical" size={4}>
           <Typography.Title level={4} style={{ margin: 0 }}>
-            评论审核
+            {t("comments.title")}
           </Typography.Title>
           <Typography.Text type="secondary">
-            评论按集隔离展示。自动判定来自「自动审核」配置的模型，人工通过或删除始终优先。
+            {t("comments.isolation_note")}
           </Typography.Text>
         </Space>
         <Space>
           <Input.Search
             allowClear
-            placeholder="搜索评论内容"
+            placeholder={t("comments.search_placeholder")}
             style={{ width: 220 }}
             onSearch={(value) => {
               setPage(1);
@@ -1651,10 +1655,10 @@ export function CommentsPage() {
             }}
           />
           <Link to="/moderation">
-            <Button size="small">自动审核配置</Button>
+            <Button size="small">{t("comments.auto_moderation_config")}</Button>
           </Link>
           <Button size="small" icon={<ReloadOutlined />} onClick={load} loading={loading}>
-            刷新
+            {t("common.refresh")}
           </Button>
         </Space>
       </div>
@@ -1662,9 +1666,9 @@ export function CommentsPage() {
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} xl={6}>
           <KpiCard
-            title="评论总数"
+            title={t("comments.total_count")}
             value={counts.total}
-            hint={<span style={{ fontSize: 12, color: "#667085" }}>当前筛选条件下的全部评论</span>}
+            hint={<span style={{ fontSize: 12, color: "#667085" }}>{t("comments.filtered_total_hint")}</span>}
             icon={<CommentOutlined />}
             color="#175cd3"
             bg="#eff8ff"
@@ -1672,9 +1676,9 @@ export function CommentsPage() {
         </Col>
         <Col xs={24} sm={12} xl={6}>
           <KpiCard
-            title="待审核"
+            title={t("common.pending_review")}
             value={counts.pending}
-            hint={<span style={{ fontSize: 12, color: "#667085" }}>占全部 {share(counts.pending)}</span>}
+            hint={<span style={{ fontSize: 12, color: "#667085" }}>{t("common.share_of_total", {v0: share(counts.pending)})}</span>}
             icon={<ClockCircleOutlined />}
             color="#b54708"
             bg="#fffaeb"
@@ -1682,9 +1686,9 @@ export function CommentsPage() {
         </Col>
         <Col xs={24} sm={12} xl={6}>
           <KpiCard
-            title="已发布"
+            title={t("drama.published_status")}
             value={counts.approved}
-            hint={<span style={{ fontSize: 12, color: "#667085" }}>占全部 {share(counts.approved)}</span>}
+            hint={<span style={{ fontSize: 12, color: "#667085" }}>{t("common.share_of_total", {v0: share(counts.approved)})}</span>}
             icon={<CheckCircleOutlined />}
             color="#027a48"
             bg="#ecfdf3"
@@ -1692,9 +1696,9 @@ export function CommentsPage() {
         </Col>
         <Col xs={24} sm={12} xl={6}>
           <KpiCard
-            title="已删除"
+            title={t("common.deleted")}
             value={counts.deleted}
-            hint={<span style={{ fontSize: 12, color: "#667085" }}>占全部 {share(counts.deleted)}</span>}
+            hint={<span style={{ fontSize: 12, color: "#667085" }}>{t("common.share_of_total", {v0: share(counts.deleted)})}</span>}
             icon={<StopOutlined />}
             color="#b42318"
             bg="#fef3f2"
@@ -1704,7 +1708,7 @@ export function CommentsPage() {
 
       <Segmented
         value={status}
-        options={COMMENT_TABS.map((tab) => ({
+        options={COMMENT_TABS().map((tab) => ({
           label: `${tab.label} ${tabCount(tab.value)}`,
           value: tab.value,
         }))}
@@ -1724,16 +1728,16 @@ export function CommentsPage() {
           pageSize,
           total: data.total,
           showSizeChanger: true,
-          showTotal: (total) => `共 ${total} 条`,
+          showTotal: (total) => t("comments.total_items", {v0: total}),
           onChange: (nextPage, nextSize) => {
             setPage(nextPage);
             setPageSize(nextSize);
           },
         }}
         columns={[
-          { title: "内容", dataIndex: "body", width: 280, render: (value: string) => <span style={{ whiteSpace: "pre-wrap" }}>{value}</span> },
+          { title: t("comments.content"), dataIndex: "body", width: 280, render: (value: string) => <span style={{ whiteSpace: "pre-wrap" }}>{value}</span> },
           {
-            title: "剧集",
+            title: t("drama.drama"),
             width: 190,
             render: (_, row) => (
               <Space direction="vertical" size={0}>
@@ -1747,7 +1751,7 @@ export function CommentsPage() {
             ),
           },
           {
-            title: "用户",
+            title: t("users.user"),
             width: 190,
             render: (_, row) => (
               <Space direction="vertical" size={0}>
@@ -1759,32 +1763,32 @@ export function CommentsPage() {
             ),
           },
           {
-            title: "状态",
+            title: t("common.status"),
             dataIndex: "status",
             width: 90,
             render: (value: string) => (
-              <Tag color={COMMENT_STATUS[value]?.color ?? "default"}>
-                {COMMENT_STATUS[value]?.label ?? value}
+              <Tag color={COMMENT_STATUS()[value]?.color ?? "default"}>
+                {COMMENT_STATUS()[value]?.label ?? value}
               </Tag>
             ),
           },
           {
-            title: "自动判定",
+            title: t("comments.auto_decision"),
             width: 110,
             render: (_, row) => {
               if (!row.moderation_verdict) {
                 if (row.moderation_state === "queued" || row.moderation_state === "running") {
-                  return <Tag color="processing">审核中</Tag>;
+                  return <Tag color="processing">{t("common.in_review")}</Tag>;
                 }
-                return <Typography.Text type="secondary">未经过模型</Typography.Text>;
+                return <Typography.Text type="secondary">{t("comments.not_modeled")}</Typography.Text>;
               }
-              const meta = MODERATION_VERDICT[row.moderation_verdict];
+              const meta = MODERATION_VERDICT()[row.moderation_verdict];
               return (
                 <Tooltip
                   title={
                     <span>
-                      {row.moderation_reason || "模型未给出原因"}
-                      {row.moderation_score != null ? ` · 置信度 ${row.moderation_score}` : ""}
+                      {row.moderation_reason || t("comments.no_reason")}
+                      {row.moderation_score != null ? t("comments.confidence", {v0: row.moderation_score}) : ""}
                     </span>
                   }
                 >
@@ -1796,21 +1800,21 @@ export function CommentsPage() {
             },
           },
           {
-            title: "时间",
+            title: t("finance.time"),
             dataIndex: "created_at",
             width: 150,
             render: (value: string | null) => (value ? new Date(value).toLocaleString() : "-"),
           },
           {
-            title: "操作",
+            title: t("common.actions"),
             width: 150,
             render: (_, row) => (
               <Space>
                 <Button size="small" disabled={row.status === "approved"} onClick={() => moderate(row, "approved")}>
-                  通过
+                  {t("moderation.approve")}
                 </Button>
                 <Button size="small" danger disabled={row.status === "deleted"} onClick={() => moderate(row, "deleted")}>
-                  删除
+                  {t("common.delete")}
                 </Button>
               </Space>
             ),
@@ -1890,18 +1894,18 @@ type FinanceOrderDetail = FinanceOrder & {
   } | null;
 };
 
-const ORDER_STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  paid: { label: "已支付", color: "#027a48", bg: "#edfcf2" },
-  created: { label: "待支付", color: "#b54708", bg: "#fffaeb" },
-  refunded: { label: "已退款", color: "#175cd3", bg: "#eff8ff" },
-  failed: { label: "支付失败", color: "#b42318", bg: "#fef3f2" },
-};
+function ORDER_STATUS_META(): Record<string, { label: string; color: string; bg: string }> { return {
+  paid: { label: t("finance.paid"), color: "#027a48", bg: "#edfcf2" },
+  created: { label: t("finance.pending_payment"), color: "#b54708", bg: "#fffaeb" },
+  refunded: { label: t("finance.refunded"), color: "#175cd3", bg: "#eff8ff" },
+  failed: { label: t("finance.payment_failed"), color: "#b42318", bg: "#fef3f2" },
+};; }
 
-const FINANCE_PERIOD_LABEL: Record<string, string> = {
-  weekly: "7 天",
-  monthly: "30 天",
-  yearly: "365 天",
-};
+function FINANCE_PERIOD_LABEL(): Record<string, string> { return {
+  weekly: t("plans.duration_7_days"),
+  monthly: t("apikeys.duration_30_days"),
+  yearly: t("apikeys.duration_365_days"),
+};; }
 
 const CURRENCY_SYMBOL: Record<string, string> = { USD: "$", CNY: "¥", EUR: "€", GBP: "£" };
 
@@ -1913,7 +1917,7 @@ function formatAmount(cents?: number | null, currency = "USD") {
 }
 
 function OrderStatusTag({ status }: { status: string }) {
-  const meta = ORDER_STATUS_META[status] ?? {
+  const meta = ORDER_STATUS_META()[status] ?? {
     label: status,
     color: "#667085",
     bg: "#f2f4f7",
@@ -1937,7 +1941,7 @@ function OrderStatusTag({ status }: { status: string }) {
 /** 用户单元格：头像 + 昵称 / 邮箱 / 公开 ID，订单里最常见的识别信息一屏可见。 */
 function OrderUserCell({ order }: { order: FinanceOrder }) {
   const account = order.user;
-  const name = account?.display_name || account?.email || `用户 #${order.user_id}`;
+  const name = account?.display_name || account?.email || t("finance.user_fallback", {v0: order.user_id});
   return (
     <Space size={10} align="start">
       <Avatar
@@ -1971,7 +1975,7 @@ function OrderUserCell({ order }: { order: FinanceOrder }) {
             whiteSpace: "nowrap",
           }}
         >
-          {account?.email || "未绑定邮箱"}
+          {account?.email || t("users.no_email_bound")}
         </div>
         <div style={{ fontSize: 11, color: "#98a2b3", fontFamily: "monospace" }}>
           ID {account?.public_id || order.user_id}
@@ -2014,7 +2018,7 @@ function FinanceOrderDrawer({ order, onClose }: { order: FinanceOrder; onClose: 
       onClose={onClose}
       title={
         <Space size={10}>
-          <span>订单详情</span>
+          <span>{t("finance.order_details")}</span>
           <OrderStatusTag status={order.status} />
         </Space>
       }
@@ -2027,7 +2031,7 @@ function FinanceOrderDrawer({ order, onClose }: { order: FinanceOrder; onClose: 
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12 }}>
             <div>
-              <div style={{ fontSize: 12, color: "#667085", marginBottom: 4 }}>订单金额</div>
+              <div style={{ fontSize: 12, color: "#667085", marginBottom: 4 }}>{t("finance.order_amount")}</div>
               <div
                 style={{
                   fontSize: 30,
@@ -2040,12 +2044,12 @@ function FinanceOrderDrawer({ order, onClose }: { order: FinanceOrder; onClose: 
                 {formatAmount(order.amount_cents, order.currency)}
               </div>
               <div style={{ fontSize: 12, color: "#667085", marginTop: 6 }}>
-                {order.billing_mode === "one_time" ? "一次性时长包" : "自动续费订阅"}
-                {hasDiscount ? ` · 套餐标准价 ${formatAmount(standardPrice, order.currency)}` : ""}
+                {order.billing_mode === "one_time" ? t("finance.one_time_duration_pack") : t("finance.auto_renew_subscription")}
+                {hasDiscount ? t("finance.standard_price_suffix", {v0: formatAmount(standardPrice, order.currency)}) : ""}
               </div>
             </div>
             <Typography.Text
-              copyable={{ text: order.order_no, tooltips: ["复制订单号", "已复制"] }}
+              copyable={{ text: order.order_no, tooltips: [t("finance.copy_order_no"), t("stagepages.copied")] }}
               style={{ fontFamily: "monospace", fontSize: 12, color: "#475467" }}
             >
               {order.order_no}
@@ -2053,16 +2057,16 @@ function FinanceOrderDrawer({ order, onClose }: { order: FinanceOrder; onClose: 
           </div>
         </Card>
 
-        <Card size="small" title="用户信息" variant="borderless" style={{ border: "1px solid #eaecf0", borderRadius: 12 }}>
+        <Card size="small" title={t("finance.user_info")} variant="borderless" style={{ border: "1px solid #eaecf0", borderRadius: 12 }}>
           <Space size={12} align="start" style={{ width: "100%", marginBottom: 12 }}>
             <Avatar size={44} src={account?.avatar_url || undefined} style={{ background: "#E53B3E" }}>
               {(account?.display_name || account?.email || String(order.user_id)).slice(0, 1).toUpperCase()}
             </Avatar>
             <div style={{ lineHeight: 1.4 }}>
               <div style={{ fontWeight: 600, fontSize: 14, color: "#101828" }}>
-                {account?.display_name || `用户 #${order.user_id}`}
+                {account?.display_name || t("finance.user_fallback", {v0: order.user_id})}
               </div>
-              <div style={{ fontSize: 12, color: "#667085" }}>{account?.email || "未绑定邮箱"}</div>
+              <div style={{ fontSize: 12, color: "#667085" }}>{account?.email || t("users.no_email_bound")}</div>
               <div style={{ fontSize: 12, color: "#98a2b3", fontFamily: "monospace" }}>
                 ID {account?.public_id || order.user_id}
               </div>
@@ -2071,7 +2075,7 @@ function FinanceOrderDrawer({ order, onClose }: { order: FinanceOrder; onClose: 
           <Row gutter={12} style={{ marginBottom: 12 }}>
             <Col span={12}>
               <div style={{ background: "#f9fafb", borderRadius: 8, padding: "10px 12px" }}>
-                <div style={{ fontSize: 11, color: "#667085" }}>累计消费</div>
+                <div style={{ fontSize: 11, color: "#667085" }}>{t("finance.total_spent")}</div>
                 <div
                   style={{
                     fontSize: 17,
@@ -2084,59 +2088,62 @@ function FinanceOrderDrawer({ order, onClose }: { order: FinanceOrder; onClose: 
                   {stats ? (
                     formatAmount(stats.paid_cents, order.currency)
                   ) : (
-                    <span style={{ color: "#98a2b3", fontSize: 12, fontWeight: 400 }}>加载中…</span>
+                    <span style={{ color: "#98a2b3", fontSize: 12, fontWeight: 400 }}>{t("common.loading")}</span>
                   )}
                 </div>
                 <div style={{ fontSize: 11, color: "#98a2b3" }}>
                   {stats
-                    ? `已支付 ${stats.paid_orders} 笔 · 退款 ${formatAmount(stats.refunded_cents, order.currency)}`
-                    : "该用户全部订单"}
+                    ? t("finance.paid_refund_summary", {v0: stats.paid_orders, v1: formatAmount(stats.refunded_cents, order.currency)})
+                    : t("finance.user_all_orders")}
                 </div>
               </div>
             </Col>
             <Col span={12}>
               <div style={{ background: "#f9fafb", borderRadius: 8, padding: "10px 12px" }}>
-                <div style={{ fontSize: 11, color: "#667085" }}>当前会员</div>
+                <div style={{ fontSize: 11, color: "#667085" }}>{t("finance.current_membership")}</div>
                 <div style={{ fontSize: 17, fontWeight: 700, lineHeight: 1.4 }}>
                   {!membership ? (
-                    <span style={{ color: "#98a2b3", fontSize: 12, fontWeight: 400 }}>加载中…</span>
+                    <span style={{ color: "#98a2b3", fontSize: 12, fontWeight: 400 }}>{t("common.loading")}</span>
                   ) : membership.active ? (
                     <Space size={6}>
                       <Tag color="green" style={{ marginInlineEnd: 0 }}>
-                        有效
+                        {t("common.active")}
                       </Tag>
                       <span style={{ fontSize: 12, color: "#475467", fontWeight: 400 }}>
-                        至 {formatTime(membership.until)}
+                        {t("users.valid_until", {v0: formatTime(membership.until)})}
                       </span>
                     </Space>
                   ) : (
                     <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-                      无有效会员
+                      {t("finance.no_active_membership")}
                     </Typography.Text>
                   )}
                 </div>
                 <div style={{ fontSize: 11, color: "#98a2b3" }}>
                   {membership?.active && membership.plan_code
-                    ? `套餐 ${membership.plan_code}${membership.canceling ? " · 到期不续费" : ""}`
-                    : "未开通会员"}
+                    ? t("finance.plan_with_cancel", {
+                        v0: membership.plan_code,
+                        v1: membership.canceling ? " · " + t("users.no_renew_at_expiry") : "",
+                      })
+                    : t("users.no_membership")}
                 </div>
               </div>
             </Col>
           </Row>
           <Descriptions column={1} size="small" colon={false} styles={{ label: { width: 96, color: "#667085" } }}>
-            <Descriptions.Item label="用户主键">{order.user_id}</Descriptions.Item>
-            <Descriptions.Item label="地区 / 语言">
+            <Descriptions.Item label={t("finance.user_pk")}>{order.user_id}</Descriptions.Item>
+            <Descriptions.Item label={t("finance.region_language")}>
               {account ? `${account.region || "-"} · ${account.locale || "-"}` : "-"}
             </Descriptions.Item>
-            <Descriptions.Item label="注册时间">
+            <Descriptions.Item label={t("users.registered_at")}>
               {account ? formatTime(account.created_at) : "-"}
             </Descriptions.Item>
           </Descriptions>
         </Card>
 
-        <Card size="small" title="套餐信息" variant="borderless" style={{ border: "1px solid #eaecf0", borderRadius: 12 }}>
+        <Card size="small" title={t("finance.plan_info")} variant="borderless" style={{ border: "1px solid #eaecf0", borderRadius: 12 }}>
           <Descriptions column={1} size="small" colon={false} styles={{ label: { width: 96, color: "#667085" } }}>
-            <Descriptions.Item label="套餐名称">
+            <Descriptions.Item label={t("finance.plan_name")}>
               {plan ? (
                 <Space size={8}>
                   <span>{plan.name_zh || plan.name_en}</span>
@@ -2148,23 +2155,24 @@ function FinanceOrderDrawer({ order, onClose }: { order: FinanceOrder; onClose: 
                 "-"
               )}
             </Descriptions.Item>
-            <Descriptions.Item label="套餐时长">
-              {plan ? FINANCE_PERIOD_LABEL[plan.code] ?? "-" : "-"}
+            <Descriptions.Item label={t("finance.plan_duration")}>
+              {plan ? FINANCE_PERIOD_LABEL()[plan.code] ?? "-" : "-"}
             </Descriptions.Item>
-            <Descriptions.Item label="版本 / 计费">
+            <Descriptions.Item label={t("finance.version_billing")}>
               {plan
-                ? `${plan.version ? `v${plan.version}` : "-"} · ${
-                    order.billing_mode === "one_time" ? "一次性" : "自动续费"
-                  }`
+                ? t("finance.version_billing_value", {
+                    v0: plan.version ? `v${plan.version}` : "-",
+                    v1: order.billing_mode === "one_time" ? t("plans.one_time") : t("plans.auto_renew"),
+                  })
                 : "-"}
             </Descriptions.Item>
-            <Descriptions.Item label="套餐标准价">
+            <Descriptions.Item label={t("finance.plan_standard_price")}>
               {plan ? formatAmount(plan.price_cents, plan.currency ?? order.currency) : "-"}
             </Descriptions.Item>
           </Descriptions>
           {benefits.length ? (
             <div style={{ marginTop: 12 }}>
-              <div style={{ fontSize: 12, color: "#667085", marginBottom: 6 }}>下单时权益快照</div>
+              <div style={{ fontSize: 12, color: "#667085", marginBottom: 6 }}>{t("finance.benefits_snapshot")}</div>
               <Space direction="vertical" size={4} style={{ width: "100%" }}>
                 {benefits.map((item) => (
                   <div key={item} style={{ fontSize: 12, color: "#475467" }}>
@@ -2177,31 +2185,31 @@ function FinanceOrderDrawer({ order, onClose }: { order: FinanceOrder; onClose: 
           ) : null}
         </Card>
 
-        <Card size="small" title="订单与支付" variant="borderless" style={{ border: "1px solid #eaecf0", borderRadius: 12 }}>
+        <Card size="small" title={t("finance.order_payment")} variant="borderless" style={{ border: "1px solid #eaecf0", borderRadius: 12 }}>
           <Descriptions column={1} size="small" colon={false} styles={{ label: { width: 96, color: "#667085" } }}>
-            <Descriptions.Item label="订单号">
+            <Descriptions.Item label={t("finance.order_no")}>
               <Typography.Text copyable style={{ fontFamily: "monospace", fontSize: 12 }}>
                 {order.order_no}
               </Typography.Text>
             </Descriptions.Item>
-            <Descriptions.Item label="支付状态">
+            <Descriptions.Item label={t("finance.payment_status")}>
               <OrderStatusTag status={order.status} />
             </Descriptions.Item>
-            <Descriptions.Item label="渠道流水号">
+            <Descriptions.Item label={t("finance.channel_txn_no")}>
               {order.external_txn_id ? (
                 <Typography.Text copyable style={{ fontFamily: "monospace", fontSize: 12 }}>
                   {order.external_txn_id}
                 </Typography.Text>
               ) : (
-                <Typography.Text type="secondary">无（未完成支付）</Typography.Text>
+                <Typography.Text type="secondary">{t("finance.no_txn_unpaid")}</Typography.Text>
               )}
             </Descriptions.Item>
-            <Descriptions.Item label="下单时间">{formatTime(order.created_at)}</Descriptions.Item>
-            <Descriptions.Item label="支付时间">
+            <Descriptions.Item label={t("finance.ordered_at")}>{formatTime(order.created_at)}</Descriptions.Item>
+            <Descriptions.Item label={t("finance.paid_at")}>
               {order.paid_at ? (
                 <span style={{ color: "#027a48" }}>{formatTime(order.paid_at)}</span>
               ) : (
-                <Typography.Text type="secondary">未支付</Typography.Text>
+                <Typography.Text type="secondary">{t("finance.unpaid")}</Typography.Text>
               )}
             </Descriptions.Item>
           </Descriptions>
@@ -2251,12 +2259,11 @@ export function FinancePage() {
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} xl={6}>
           <KpiCard
-            title="净收入"
+            title={t("finance.net_revenue")}
             value={formatAmount(summary?.net_cents ?? 0)}
             hint={
               <span style={{ fontSize: 12, color: "#667085" }}>
-                成交 {formatAmount(summary?.gross_cents ?? 0)} · 退款{" "}
-                {formatAmount(summary?.refunded_cents ?? 0)}
+                {t("finance.completed_refund", {v0: formatAmount(summary?.gross_cents ?? 0), v1: formatAmount(summary?.refunded_cents ?? 0)})}
               </span>
             }
             icon={<DollarOutlined />}
@@ -2266,11 +2273,11 @@ export function FinancePage() {
         </Col>
         <Col xs={24} sm={12} xl={6}>
           <KpiCard
-            title="已支付订单"
+            title={t("finance.paid_orders")}
             value={`${summary?.paid_orders ?? 0}`}
             hint={
               <span style={{ fontSize: 12, color: "#667085" }}>
-                共 {summary?.total_orders ?? 0} 笔 · 支付率 {paidRate}
+                {t("finance.total_orders_rate", {v0: summary?.total_orders ?? 0, v1: paidRate})}
               </span>
             }
             icon={<ShoppingCartOutlined />}
@@ -2280,11 +2287,11 @@ export function FinancePage() {
         </Col>
         <Col xs={24} sm={12} xl={6}>
           <KpiCard
-            title="今日成交"
+            title={t("finance.today_sales")}
             value={formatAmount(summary?.today_paid_cents ?? 0)}
             hint={
               <span style={{ fontSize: 12, color: "#667085" }}>
-                今日新增 {summary?.today_orders ?? 0} 笔订单
+                {t("finance.today_new_orders", {v0: summary?.today_orders ?? 0})}
               </span>
             }
             icon={<RiseOutlined />}
@@ -2294,12 +2301,11 @@ export function FinancePage() {
         </Col>
         <Col xs={24} sm={12} xl={6}>
           <KpiCard
-            title="待支付 / 已退款"
+            title={t("finance.pending_or_refunded")}
             value={`${summary?.created_orders ?? 0} / ${summary?.refunded_orders ?? 0}`}
             hint={
               <span style={{ fontSize: 12, color: "#667085" }}>
-                待支付 {formatAmount(summary?.pending_cents ?? 0)} · 退款{" "}
-                {formatAmount(summary?.refunded_cents ?? 0)}
+                {t("finance.pending_refund", {v0: formatAmount(summary?.pending_cents ?? 0), v1: formatAmount(summary?.refunded_cents ?? 0)})}
               </span>
             }
             icon={<ClockCircleOutlined />}
@@ -2310,7 +2316,7 @@ export function FinancePage() {
       </Row>
 
       <Card
-        title="订单明细"
+        title={t("finance.order_items")}
         styles={{ body: { paddingTop: 16 } }}
         extra={
           <Space wrap size={8}>
@@ -2322,11 +2328,11 @@ export function FinancePage() {
                 setPage(1);
               }}
               options={[
-                { label: `全部 ${summary?.total_orders ?? 0}`, value: "" },
-                { label: `已支付 ${summary?.paid_orders ?? 0}`, value: "paid" },
-                { label: `待支付 ${summary?.created_orders ?? 0}`, value: "created" },
-                { label: `已退款 ${summary?.refunded_orders ?? 0}`, value: "refunded" },
-                { label: `失败 ${summary?.failed_orders ?? 0}`, value: "failed" },
+                { label: t("finance.filter_all_orders", {v0: summary?.total_orders ?? 0}), value: "" },
+                { label: t("finance.filter_paid", {v0: summary?.paid_orders ?? 0}), value: "paid" },
+                { label: t("finance.filter_pending", {v0: summary?.created_orders ?? 0}), value: "created" },
+                { label: t("finance.filter_refunded", {v0: summary?.refunded_orders ?? 0}), value: "refunded" },
+                { label: t("finance.filter_failed", {v0: summary?.failed_orders ?? 0}), value: "failed" },
               ]}
             />
             <Select
@@ -2338,15 +2344,15 @@ export function FinancePage() {
                 setPage(1);
               }}
               options={[
-                { label: "全部计费", value: "" },
-                { label: "自动续费", value: "subscription" },
-                { label: "一次性", value: "one_time" },
+                { label: t("finance.all_billing"), value: "" },
+                { label: t("plans.auto_renew"), value: "subscription" },
+                { label: t("plans.one_time"), value: "one_time" },
               ]}
             />
             <Input.Search
               allowClear
               size="small"
-              placeholder="订单号 / 邮箱 / 用户 ID"
+              placeholder={t("finance.order_search_placeholder")}
               style={{ width: 260 }}
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
@@ -2356,7 +2362,7 @@ export function FinancePage() {
               }}
             />
             <Button size="small" icon={<ReloadOutlined />} onClick={() => reload()} loading={loading}>
-              刷新
+              {t("common.refresh")}
             </Button>
           </Space>
         }
@@ -2367,14 +2373,14 @@ export function FinancePage() {
           loading={loading}
           size="middle"
           scroll={{ x: 1120 }}
-          locale={{ emptyText: query ? `没有匹配「${query}」的订单` : "暂无订单" }}
+          locale={{ emptyText: query ? t("finance.no_matching_orders", {v0: query}) : t("finance.no_orders") }}
           pagination={{
             current: data.page ?? page,
             pageSize: data.page_size ?? pageSize,
             total: data.total ?? 0,
             showSizeChanger: true,
             pageSizeOptions: [10, 20, 50, 100],
-            showTotal: (total) => `共 ${total} 笔订单`,
+            showTotal: (total) => t("finance.total_orders", {v0: total}),
             onChange: (nextPage, nextSize) => {
               setPage(nextPage);
               setPageSize(nextSize);
@@ -2382,7 +2388,7 @@ export function FinancePage() {
           }}
           columns={[
             {
-              title: "订单号",
+              title: t("finance.order_no"),
               dataIndex: "order_no",
               width: 210,
               render: (value: string, order) => (
@@ -2395,20 +2401,25 @@ export function FinancePage() {
                   </Typography.Text>
                   <div style={{ fontSize: 11, color: "#98a2b3" }}>
                     {order.external_txn_id
-                      ? `流水 ${order.external_txn_id.length > 16 ? `${order.external_txn_id.slice(0, 16)}…` : order.external_txn_id}`
-                      : "无渠道流水"}
+                      ? t("finance.txn_id", {
+                          v0:
+                            order.external_txn_id.length > 16
+                              ? `${order.external_txn_id.slice(0, 16)}…`
+                              : order.external_txn_id,
+                        })
+                      : t("finance.no_channel_txn")}
                   </div>
                 </div>
               ),
             },
             {
-              title: "用户",
+              title: t("users.user"),
               dataIndex: "user",
               width: 240,
               render: (_, order) => <OrderUserCell order={order} />,
             },
             {
-              title: "套餐",
+              title: t("plans.plan"),
               dataIndex: "plan",
               width: 200,
               render: (_, order) => {
@@ -2420,8 +2431,8 @@ export function FinancePage() {
                       {plan.name_zh || plan.name_en}
                     </div>
                     <div style={{ fontSize: 11, color: "#667085" }}>
-                      {FINANCE_PERIOD_LABEL[plan.code] ?? plan.code} ·{" "}
-                      {order.billing_mode === "one_time" ? "时长包" : "订阅"}
+                      {FINANCE_PERIOD_LABEL()[plan.code] ?? plan.code} ·{" "}
+                      {order.billing_mode === "one_time" ? t("finance.duration_pack") : t("finance.subscription")}
                       {plan.version ? ` · v${plan.version}` : ""}
                     </div>
                   </div>
@@ -2429,7 +2440,7 @@ export function FinancePage() {
               },
             },
             {
-              title: "金额",
+              title: t("finance.amount"),
               dataIndex: "amount_cents",
               width: 130,
               align: "right",
@@ -2449,7 +2460,7 @@ export function FinancePage() {
                     {order.plan?.price_cents !== null &&
                     order.plan?.price_cents !== undefined &&
                     order.plan.price_cents !== cents
-                      ? `标价 ${formatAmount(order.plan.price_cents, order.currency)}`
+                      ? t("finance.listed_price", {v0: formatAmount(order.plan.price_cents, order.currency)})
                       : order.currency === "USD"
                         ? ""
                         : order.currency}
@@ -2458,32 +2469,32 @@ export function FinancePage() {
               ),
             },
             {
-              title: "状态",
+              title: t("common.status"),
               dataIndex: "status",
               width: 108,
               render: (value: string) => <OrderStatusTag status={value} />,
             },
             {
-              title: "下单 / 支付",
+              title: t("finance.order_or_pay"),
               dataIndex: "created_at",
               width: 176,
               render: (value: string, order) => (
                 <div style={{ lineHeight: 1.45, fontVariantNumeric: "tabular-nums" }}>
                   <div style={{ fontSize: 12, color: "#344054" }}>{formatTime(value)}</div>
                   <div style={{ fontSize: 11, color: order.paid_at ? "#027a48" : "#98a2b3" }}>
-                    {order.paid_at ? `支付 ${formatTime(order.paid_at)}` : "未支付"}
+                    {order.paid_at ? t("finance.paid_time_value", {v0: formatTime(order.paid_at)}) : t("finance.unpaid")}
                   </div>
                 </div>
               ),
             },
             {
-              title: "操作",
+              title: t("common.actions"),
               key: "action",
               width: 88,
               fixed: "right",
               render: (_, order) => (
                 <Button type="link" size="small" onClick={() => setDetail(order)}>
-                  详情
+                  {t("finance.details")}
                 </Button>
               ),
             },
@@ -2508,17 +2519,17 @@ type PlanItem = {
 
 type BillingMode = "subscription" | "one_time";
 
-const PLAN_PERIOD: Record<string, string> = {
-  weekly: "7 天",
-  monthly: "30 天",
-  yearly: "365 天",
-};
+function PLAN_PERIOD(): Record<string, string> { return {
+  weekly: t("plans.duration_7_days"),
+  monthly: t("apikeys.duration_30_days"),
+  yearly: t("apikeys.duration_365_days"),
+};; }
 
-const PLAN_UNIT: Record<string, string> = {
-  weekly: "周",
-  monthly: "月",
-  yearly: "年",
-};
+function PLAN_UNIT(): Record<string, string> { return {
+  weekly: t("plans.week"),
+  monthly: t("plans.month"),
+  yearly: t("plans.year"),
+};; }
 
 function centsToDollars(cents: number) {
   return (cents / 100).toFixed(2);
@@ -2554,16 +2565,16 @@ export function PlansPage() {
       );
       setMode(result.billing_mode);
       message.success(
-        result.billing_mode === "one_time" ? "已切换为一次性购买" : "已切换为自动续费",
+        result.billing_mode === "one_time" ? t("plans.switched_one_time") : t("plans.switched_auto_renew"),
       );
       const failed = (result.prices ?? []).filter((item) => !item.ok);
       if (failed.length) {
-        message.warning(`部分套餐价格未生成：${failed.map((item) => item.code).join("、")}，下单时会重试`);
+        message.warning(t("plans.partial_price_failed", {v0: failed.map((item) => item.code).join("、")}));
       }
       setPendingMode(null);
       reload();
     } catch (e) {
-      message.error(`切换失败：${errorText(e)}`);
+      message.error(t("plans.switch_failed", {v0: errorText(e)}));
     } finally {
       setSwitching(false);
     }
@@ -2587,11 +2598,11 @@ export function PlansPage() {
     if (!editing) return;
     const priceCents = dollarsToCents(values.price);
     if (!Number.isFinite(priceCents) || priceCents <= 0) {
-      message.error("价格必须大于 0");
+      message.error(t("plans.price_gt_zero"));
       return;
     }
     if (mode === "one_time" && priceCents < 50) {
-      message.error("一次性购买的价格最低 $0.50（Stripe 限制），请调高或先切换回自动续费");
+      message.error(t("plans.one_time_min_price"));
       return;
     }
     const items = values.benefits
@@ -2607,11 +2618,11 @@ export function PlansPage() {
           benefits: { items, best: values.best },
         }),
       });
-      message.success(`已写入新版本 v${result.version} · $${centsToDollars(result.price_cents)}`);
+      message.success(t("plans.new_version_written", {v0: result.version, v1: centsToDollars(result.price_cents)}));
       setEditing(null);
       reload();
     } catch (e) {
-      message.error(`保存失败：${errorText(e)}`);
+      message.error(t("stagepages.save_failed", {v0: errorText(e)}));
     } finally {
       setSaving(false);
     }
@@ -2623,30 +2634,30 @@ export function PlansPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
         <Space direction="vertical" size={4}>
           <Typography.Title level={4} style={{ margin: 0 }}>
-            会员套餐
+            {t("plans.title")}
           </Typography.Title>
           <Typography.Text type="secondary">
-            维护三档会员套餐的价格、有效期与权益内容。修改价格会写入新的版本快照，客户端与官网将同步生效。
+            {t("plans.maintain_note")}
           </Typography.Text>
         </Space>
         <Button icon={<ReloadOutlined />} onClick={() => reload()} loading={loading}>
-          刷新
+          {t("common.refresh")}
         </Button>
       </div>
 
       <Card size="small" style={{ borderRadius: 10 }}>
         <Space wrap size={16} align="center">
           <Space direction="vertical" size={0} style={{ minWidth: 160 }}>
-            <Typography.Text strong>计费模式</Typography.Text>
+            <Typography.Text strong>{t("plans.billing_mode")}</Typography.Text>
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-              全局生效，三个套餐共用
+              {t("plans.global_effect")}
             </Typography.Text>
           </Space>
           <Segmented
             value={mode}
             options={[
-              { label: "自动续费", value: "subscription" },
-              { label: "一次性购买", value: "one_time" },
+              { label: t("plans.auto_renew"), value: "subscription" },
+              { label: t("plans.one_time_purchase"), value: "one_time" },
             ]}
             onChange={(value) => {
               const next = value as BillingMode;
@@ -2654,26 +2665,26 @@ export function PlansPage() {
             }}
           />
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            切换只影响新购买，已有自动续费订阅不会停止
+            {t("plans.switch_scope_note")}
           </Typography.Text>
         </Space>
       </Card>
 
       <Modal
         open={pendingMode !== null}
-        title="切换计费模式"
-        okText="确认切换"
-        cancelText="取消"
+        title={t("plans.switch_billing_mode")}
+        okText={t("plans.confirm_switch")}
+        cancelText={t("common.cancel")}
         confirmLoading={switching}
         onCancel={() => (switching ? undefined : setPendingMode(null))}
         onOk={switchMode}
       >
         <p style={{ marginTop: 0 }}>
-          切换后，三个套餐的新购买都会变成
-          <strong>{pendingMode === "one_time" ? "一次性付款" : "自动续费订阅"}</strong>。
+          {t("plans.after_switch")}
+          <strong>{pendingMode === "one_time" ? t("plans.one_time_payment") : t("finance.auto_renew_subscription")}</strong>。
         </p>
         <p style={{ marginBottom: 0, color: "#8c8c8c" }}>
-          已有自动续费订阅仍按原周期扣费，不会因为这次切换而停止；一次性购买的时长会在剩余有效期上叠加。
+          {t("plans.switch_existing_note")}
         </p>
       </Modal>
 
@@ -2681,8 +2692,8 @@ export function PlansPage() {
         type="info"
         showIcon
         icon={<InfoCircleOutlined />}
-        message="套餐版本机制说明"
-        description="修改价格或权益会即时生成递增的版本号（例如 v2），已购历史订单按购买时的版本计价对账，不会追溯改动。"
+        message={t("plans.version_mechanism")}
+        description={t("plans.version_note")}
         style={{ borderRadius: 8 }}
       />
 
@@ -2691,7 +2702,7 @@ export function PlansPage() {
         {(data.items ?? []).map((plan) => {
           const items = plan.benefits?.items ?? [];
           const isBest = Boolean(plan.benefits?.best);
-          const periodText = PLAN_PERIOD[plan.code] ?? plan.code;
+          const periodText = PLAN_PERIOD()[plan.code] ?? plan.code;
 
           return (
             <Col xs={24} sm={24} md={8} key={plan.code} style={{ display: "flex" }}>
@@ -2752,11 +2763,11 @@ export function PlansPage() {
                       color={mode === "one_time" ? "orange" : "blue"}
                       style={{ margin: 0, borderRadius: 10, padding: "0 8px" }}
                     >
-                      {mode === "one_time" ? "一次性" : "自动续费"}
+                      {mode === "one_time" ? t("plans.one_time") : t("plans.auto_renew")}
                     </Tag>
                   </div>
                   <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-                    标识码：{plan.code}
+                    {t("plans.plan_code_label", {v0: plan.code})}
                   </Typography.Text>
                 </div>
 
@@ -2777,7 +2788,7 @@ export function PlansPage() {
                       ${centsToDollars(plan.price_cents)}
                     </span>
                     <span style={{ fontSize: 13, color: "#8c8c8c", marginLeft: 4 }}>
-                      / {mode === "one_time" ? periodText : PLAN_UNIT[plan.code] ?? periodText}
+                      / {mode === "one_time" ? periodText : PLAN_UNIT()[plan.code] ?? periodText}
                     </span>
                   </div>
                   <Tag color="processing" style={{ borderRadius: 4, margin: 0 }}>
@@ -2788,7 +2799,7 @@ export function PlansPage() {
                 {/* 权益列表区 */}
                 <div style={{ flex: 1, marginBottom: 24 }}>
                   <Typography.Text strong style={{ fontSize: 13, display: "block", marginBottom: 12, color: "#595959" }}>
-                    包含权益：
+                    {t("plans.included_benefits")}
                   </Typography.Text>
                   {items.length ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -2801,7 +2812,7 @@ export function PlansPage() {
                     </div>
                   ) : (
                     <Typography.Text type="secondary" style={{ fontSize: 13 }}>
-                      暂无配置权益
+                      {t("plans.no_benefits")}
                     </Typography.Text>
                   )}
                 </div>
@@ -2817,7 +2828,7 @@ export function PlansPage() {
                     onClick={() => openEdit(plan)}
                     style={{ borderRadius: 6, fontWeight: 500 }}
                   >
-                    修改套餐配置
+                    {t("plans.edit_plan_config")}
                   </Button>
                 </div>
               </Card>
@@ -2828,12 +2839,12 @@ export function PlansPage() {
 
       {/* 修改价格与权益弹窗 */}
       <Modal
-        title={editing ? `修改配置 · ${editing.name_zh || editing.name_en}` : "修改配置"}
+        title={editing ? t("plans.edit_config_title", {v0: editing.name_zh || editing.name_en}) : t("plans.edit_config")}
         open={editing !== null}
         onCancel={closeEdit}
         onOk={() => form.submit()}
-        okText="保存新版本"
-        cancelText="取消"
+        okText={t("plans.save_new_version")}
+        cancelText={t("common.cancel")}
         confirmLoading={saving}
         maskClosable={!saving}
         keyboard={!saving}
@@ -2845,20 +2856,20 @@ export function PlansPage() {
             <Alert
               type="warning"
               showIcon
-              message={`当前版本 v${editing.version} · $${centsToDollars(editing.price_cents)}`}
-              description="点击保存将写入新版本，立即同步至客户端与官网，已有付费订单计价不受影响。"
+              message={t("plans.current_version", {v0: editing.version, v1: centsToDollars(editing.price_cents)})}
+              description={t("plans.save_version_note")}
               style={{ marginBottom: 16, borderRadius: 6 }}
             />
             <Form.Item
-              label="套餐售价（美元）"
+              label={t("plans.plan_price_usd")}
               name="price"
-              extra={mode === "one_time" ? "一次性购买最低 $0.50（Stripe 限制）" : undefined}
+              extra={mode === "one_time" ? t("plans.one_time_min_note") : undefined}
               rules={[
-                { required: true, message: "请填写价格" },
+                { required: true, message: t("plans.enter_price") },
                 {
                   type: "number",
                   min: mode === "one_time" ? 0.5 : 0.01,
-                  message: mode === "one_time" ? "一次性价格至少 $0.50" : "价格至少 $0.01",
+                  message: mode === "one_time" ? t("plans.one_time_price_min") : t("plans.price_min"),
                 },
               ]}
             >
@@ -2872,16 +2883,16 @@ export function PlansPage() {
               />
             </Form.Item>
             <Form.Item
-              label="包含权益（一行一条）"
+              label={t("plans.benefits_lines")}
               name="benefits"
-              tooltip="每行输入一条权益，将在客户端及官网会员卡片列表中逐项展示"
+              tooltip={t("plans.benefits_hint")}
             >
               <Input.TextArea rows={4} placeholder={"Unlock all\nNo ads\n1080p"} />
             </Form.Item>
-            <Form.Item label="推荐标签（Best）" name="best">
+            <Form.Item label={t("plans.recommended_tag")} name="best">
               <Radio.Group>
-                <Radio value={true}>标为 Best（重点高亮推荐）</Radio>
-                <Radio value={false}>不标记（常规套餐）</Radio>
+                <Radio value={true}>{t("plans.mark_best")}</Radio>
+                <Radio value={false}>{t("plans.no_mark")}</Radio>
               </Radio.Group>
             </Form.Item>
           </Form>
@@ -2896,12 +2907,12 @@ export function OpsCenterPage() {
   const { data, reload } = useLoad<{ items: any[] }>("/admin/v1/pushes", { items: [] });
   return (
     <Space direction="vertical" style={{ width: "100%" }}>
-      <Typography.Title level={4}>运营中心</Typography.Title>
+      <Typography.Title level={4}>{t("ops.title")}</Typography.Title>
       <Space>
-        <Input placeholder="推送标题" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <Button type="primary" onClick={async () => { await api(`/admin/v1/pushes?title=${encodeURIComponent(title)}`, { method: "POST" }); setTitle(""); reload(); }}>记录推送</Button>
+        <Input placeholder={t("ops.push_title")} value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Button type="primary" onClick={async () => { await api(`/admin/v1/pushes?title=${encodeURIComponent(title)}`, { method: "POST" }); setTitle(""); reload(); }}>{t("ops.record_push")}</Button>
       </Space>
-      <Table rowKey="id" dataSource={data.items} pagination={false} scroll={{ x: 480 }} columns={[{ title: "内容", dataIndex: "title" }, { title: "送达", dataIndex: "delivered_count" }, { title: "时间", dataIndex: "sent_at" }]} />
+      <Table rowKey="id" dataSource={data.items} pagination={false} scroll={{ x: 480 }} columns={[{ title: t("comments.content"), dataIndex: "title" }, { title: t("ops.delivered"), dataIndex: "delivered_count" }, { title: t("finance.time"), dataIndex: "sent_at" }]} />
     </Space>
   );
 }
@@ -2925,33 +2936,33 @@ export function EpisodesPanel({ dramaId }: { dramaId: string }) {
       setPreview({
         open: true,
         url: signed.embed_url ?? signed.url,
-        title: `预览 · 第 ${episodeNumber} 集`,
+        title: t("drama.preview_episode", {v0: episodeNumber}),
       });
     } catch (e) {
-      message.error(`预览失败：${errorText(e)}`);
+      message.error(t("stagepages.preview_failed", {v0: errorText(e)}));
     }
   };
 
   return (
     <Space direction="vertical" style={{ width: "100%" }}>
       <Space>
-        <Select allowClear placeholder="状态" style={{ width: 160 }} value={status} onChange={setStatus} options={["not_uploaded", "transcoding", "transcode_failed", "in_review", "published"].map((v) => ({ value: v, label: v }))} />
-        <Button onClick={reload}>筛选</Button>
-        <Button onClick={async () => { await api(`/admin/v1/dramas/${dramaId}/episodes/bulk`, { method: "POST", body: JSON.stringify({ count: 64 }) }); reload(); }}>登记 64 集</Button>
+        <Select allowClear placeholder={t("common.status")} style={{ width: 160 }} value={status} onChange={setStatus} options={["not_uploaded", "transcoding", "transcode_failed", "in_review", "published"].map((v) => ({ value: v, label: v }))} />
+        <Button onClick={reload}>{t("ops.filter")}</Button>
+        <Button onClick={async () => { await api(`/admin/v1/dramas/${dramaId}/episodes/bulk`, { method: "POST", body: JSON.stringify({ count: 64 }) }); reload(); }}>{t("drama.register_64_episodes")}</Button>
       </Space>
       <Table rowKey="id" dataSource={data.items} pagination={{ pageSize: 20 }} scroll={{ x: 560 }} columns={[
-        { title: "集", dataIndex: "episode_number" },
-        { title: "标题", dataIndex: "title" },
-        { title: "状态", dataIndex: "status" },
-        { title: "操作", render: (_, row) => (
+        { title: t("common.episodes_unit"), dataIndex: "episode_number" },
+        { title: t("common.title"), dataIndex: "title" },
+        { title: t("common.status"), dataIndex: "status" },
+        { title: t("common.actions"), render: (_, row) => (
           row.bunny_video_id ? (
-            <Button size="small" type="link" style={{ padding: 0 }} onClick={() => openPreview(row.id, row.episode_number)}>预览</Button>
+            <Button size="small" type="link" style={{ padding: 0 }} onClick={() => openPreview(row.id, row.episode_number)}>{t("common.preview")}</Button>
           ) : (
             <Button size="small" onClick={async () => {
               await api(`/admin/v1/episodes/${row.id}/upload-session`, { method: "POST", body: JSON.stringify({ filename: "ep.mp4", mime: "video/mp4", size_bytes: 1024, width: 720, height: 1280 }) });
-              message.success("已创建直传会话，文件不经过 API");
+              message.success(t("drama.direct_upload_note"));
               reload();
-            }}>上传</Button>
+            }}>{t("common.upload")}</Button>
           )
         ) },
       ]} />
@@ -2985,12 +2996,12 @@ export function GroupsPanel({ dramaId }: { dramaId: string }) {
   return (
     <Space direction="vertical">
       <Space>
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="分组标题" />
-        <Button onClick={async () => { await api("/admin/v1/groups", { method: "POST", body: JSON.stringify({ name, position: data.items.length }) }); setName(""); reload(); }}>新建分组</Button>
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("groups.group_title")} />
+        <Button onClick={async () => { await api("/admin/v1/groups", { method: "POST", body: JSON.stringify({ name, position: data.items.length }) }); setName(""); reload(); }}>{t("groups.create_group")}</Button>
       </Space>
       {data.items.map((group) => (
-        <Card key={group.id} size="small" title={`${group.name} · 排序 ${group.position}`}>
-          <Button onClick={async () => { await api(`/admin/v1/groups/${group.id}/dramas`, { method: "POST", body: JSON.stringify({ drama_id: Number(dramaId), confirm: true }) }); message.success("已加入"); }}>加入本组</Button>
+        <Card key={group.id} size="small" title={t("groups.name_sort", {v0: group.name, v1: group.position})}>
+          <Button onClick={async () => { await api(`/admin/v1/groups/${group.id}/dramas`, { method: "POST", body: JSON.stringify({ drama_id: Number(dramaId), confirm: true }) }); message.success(t("groups.joined")); }}>{t("groups.join_group")}</Button>
         </Card>
       ))}
     </Space>
@@ -2999,12 +3010,12 @@ export function GroupsPanel({ dramaId }: { dramaId: string }) {
 
 type PublishAction = { to: string; label: string; primary?: boolean; danger?: boolean };
 
-const DRAMA_STATUS_TEXT: Record<string, string> = {
-  draft: "草稿",
-  in_review: "审核中",
-  published: "已上架",
-  unpublished: "已下架",
-};
+function DRAMA_STATUS_TEXT(): Record<string, string> { return {
+  draft: t("common.draft"),
+  in_review: t("common.in_review"),
+  published: t("common.published"),
+  unpublished: t("common.unpublished"),
+};; }
 
 const DRAMA_STATUS_COLOR: Record<string, string> = {
   draft: "default",
@@ -3053,19 +3064,19 @@ function DeleteConfirmContent({
   const groups = impact.groups ?? [];
   const episodes = impact.episode_count ?? fallbackEpisodeCount ?? 0;
   const rows: [string, string][] = [
-    ["分集", `${episodes} 集（视频记录、字幕、封面一并删除）`],
-    ["首页分组引用", groups.length ? `${groups.length} 个：${groups.join("、")}` : "无"],
-    ["Banner 引用", impact.banner_count ? `${impact.banner_count} 条` : "无"],
-    ["推送记录", impact.push_count ? `${impact.push_count} 条` : "无"],
-    ["用户数据", "观看进度、解锁记录与评论"],
+    [t("drama.episodes"), t("drama.delete_episodes_note", {v0: episodes})],
+    [t("groups.home_refs"), groups.length ? t("groups.count_list", {v0: groups.length, v1: groups.join("、")}) : t("common.none")],
+    [t("groups.banner_refs"), impact.banner_count ? t("groups.banner_count", {v0: impact.banner_count}) : t("common.none")],
+    [t("ops.push_records"), impact.push_count ? t("groups.banner_count", {v0: impact.push_count}) : t("common.none")],
+    [t("drama.user_data"), t("drama.user_data_detail")],
   ];
   return (
     <Space direction="vertical" size={12} style={{ width: "100%" }}>
       <Alert
         type="error"
         showIcon
-        message="删除后不可恢复"
-        description={`《${dramaTitle}》及其关联数据会被永久删除，后台无法找回。`}
+        message={t("drama.delete_irreversible")}
+        description={t("drama.delete_permanent_note", {v0: dramaTitle})}
       />
       <ul style={{ margin: 0, paddingInlineStart: 20 }}>
         {rows.map(([label, value]) => (
@@ -3105,11 +3116,11 @@ export function PublishPanel({
         method: "POST",
         body: JSON.stringify({ to_status }),
       });
-      message.success(`${label}成功`);
+      message.success(t("drama.status_action_success", {v0: label}));
       window.location.reload();
     } catch (e) {
       // 409 = 状态机不允许的跳转（例如草稿直接上架）
-      message.error(`${label}失败：${errorText(e)}`);
+      message.error(t("drama.status_action_failed", {v0: label, v1: errorText(e)}));
       setBusy(null);
     }
   };
@@ -3120,12 +3131,12 @@ export function PublishPanel({
       return;
     }
     confirm({
-      title: `${label}前还有未完成的步骤`,
-      okText: `仍然${label}`,
-      cancelText: "取消",
+      title: t("drama.pending_steps_title", {v0: label}),
+      okText: t("drama.still_action", {v0: label}),
+      cancelText: t("common.cancel"),
       content: (
         <Space direction="vertical" size={12} style={{ width: "100%" }}>
-          <Alert type="warning" showIcon message="下面这些还没有完成" />
+          <Alert type="warning" showIcon message={t("drama.pending_items_note")} />
           <ul style={{ margin: 0, paddingInlineStart: 20 }}>
             {issues.map((item) => (
               <li key={item}>{item}</li>
@@ -3145,23 +3156,23 @@ export function PublishPanel({
     } catch (e) {
       message.error(
         e instanceof ApiError && e.status === 403
-          ? "删除失败：只有管理员可以删除剧集，请用 admin 账号登录"
-          : `获取删除影响范围失败：${errorText(e)}`,
+          ? t("drama.delete_failed_admin_only")
+          : t("drama.delete_impact_failed", {v0: errorText(e)}),
       );
       return;
     } finally {
       setDeleting(false);
     }
     if (impact === null) {
-      message.success(`《${dramaTitle}》已删除`);
+      message.success(t("drama.deleted_success", {v0: dramaTitle}));
       navigate("/dramas");
       return;
     }
     confirm({
-      title: "删除剧集",
+      title: t("drama.delete_drama"),
       danger: true,
-      okText: "删除",
-      cancelText: "取消",
+      okText: t("common.delete"),
+      cancelText: t("common.cancel"),
       width: 480,
       content: (
         <DeleteConfirmContent
@@ -3179,12 +3190,12 @@ export function PublishPanel({
         } catch (e) {
           message.error(
             e instanceof ApiError && e.status === 403
-              ? "删除失败：只有管理员可以删除剧集，请用 admin 账号登录"
-              : `删除失败：${errorText(e)}`,
+              ? t("drama.delete_failed_admin_only")
+              : t("drama.delete_failed", {v0: errorText(e)}),
           );
           throw e;
         }
-        message.success(`《${dramaTitle}》已删除`);
+        message.success(t("drama.deleted_success", {v0: dramaTitle}));
         navigate("/dramas");
       },
     });
@@ -3195,25 +3206,25 @@ export function PublishPanel({
   // 这里只列出当前状态下合法的动作，避免点了按钮才吃到 409。
   const actions: PublishAction[] =
     status === "draft"
-      ? [{ to: "in_review", label: "提交审核", primary: true }]
+      ? [{ to: "in_review", label: t("drama.submit_review"), primary: true }]
       : status === "in_review"
         ? [
-            { to: "published", label: "通过并上架", primary: true },
-            { to: "draft", label: "退回草稿" },
+            { to: "published", label: t("drama.approve_publish"), primary: true },
+            { to: "draft", label: t("drama.back_to_draft") },
           ]
         : status === "published"
-          ? [{ to: "unpublished", label: "下架", primary: true, danger: true }]
+          ? [{ to: "unpublished", label: t("drama.unpublish"), primary: true, danger: true }]
           : [
-              { to: "published", label: "重新上架", primary: true },
-              { to: "in_review", label: "提交复审" },
+              { to: "published", label: t("drama.republish"), primary: true },
+              { to: "in_review", label: t("drama.submit_re_review") },
             ];
 
   return (
     <>
       <Space direction="vertical" size="middle" style={{ width: "100%" }}>
         <Space size={8}>
-          <Typography.Text>当前状态：</Typography.Text>
-          <Tag color={DRAMA_STATUS_COLOR[status]}>{DRAMA_STATUS_TEXT[status] ?? status}</Tag>
+          <Typography.Text>{t("drama.current_status")}</Typography.Text>
+          <Tag color={DRAMA_STATUS_COLOR[status]}>{DRAMA_STATUS_TEXT()[status] ?? status}</Tag>
         </Space>
 
       {issues.length > 0 && (
@@ -3221,7 +3232,7 @@ export function PublishPanel({
           type="warning"
           showIcon
           style={{ width: "100%" }}
-          message="上架前建议先完成这些"
+          message={t("drama.before_publish_note")}
           description={
             <ul style={{ margin: 0, paddingInlineStart: 20 }}>
               {issues.map((item) => (
@@ -3248,14 +3259,14 @@ export function PublishPanel({
       </Space>
 
       <Typography.Text type="secondary">
-        流程：草稿 → 提交审核 → 上架；已上架可下架，下架后可重新上架。
+        {t("drama.workflow_note")}
       </Typography.Text>
 
-      <Tooltip title={isAdmin ? "" : "仅管理员可删除剧集"}>
+      <Tooltip title={isAdmin ? "" : t("drama.admin_only_delete")}>
         {/* Tooltip 在 disabled 元素上不触发，所以包一层 span */}
         <span style={{ display: "inline-block" }}>
           <Button danger disabled={!isAdmin} loading={deleting} onClick={onDelete}>
-            删除剧集
+            {t("drama.delete_drama")}
           </Button>
         </span>
       </Tooltip>

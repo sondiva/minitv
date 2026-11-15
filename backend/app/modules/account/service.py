@@ -15,6 +15,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.i18n import t
 from app.modules.account.facebook import FacebookAuthError, verify as verify_facebook
 from app.modules.account.google import GoogleAuthError, GoogleIdentity, verify_id_token
 from app.modules.account.mail import MailError, send_email
@@ -44,43 +45,43 @@ MAX_REWARD_AMOUNT = 1_000_000
 REWARD_TASKS: tuple[dict, ...] = (
     {
         "code": "checkin",
-        "name": "7 天签到梯度",
-        "description": "连续签到第 1-7 天依次发放；中断后从第 1 天重新计算",
+        "name": t("reward.checkin_name"),
+        "description": t("reward.checkin_desc"),
         "kind": "gradient",
         "amounts": list(DEFAULT_CHECKIN),
     },
     {
         "code": "register",
-        "name": "注册奖励",
-        "description": "邮箱注册成功后一次性发放",
+        "name": t("reward.register_name"),
+        "description": t("reward.register_desc"),
         "kind": "single",
         "amounts": list(DEFAULT_AMOUNTS["register"]),
     },
     {
         "code": "bind_email",
-        "name": "绑定邮箱",
-        "description": "首次绑定邮箱时发放，只发一次",
+        "name": t("reward.bind_email_name"),
+        "description": t("reward.bind_email_desc"),
         "kind": "single",
         "amounts": list(DEFAULT_AMOUNTS["bind_email"]),
     },
     {
         "code": "bind_facebook",
-        "name": "绑定 Facebook",
-        "description": "首次绑定 Facebook 时发放，只发一次",
+        "name": t("reward.bind_facebook_name"),
+        "description": t("reward.bind_facebook_desc"),
         "kind": "single",
         "amounts": list(DEFAULT_AMOUNTS["bind_facebook"]),
     },
     {
         "code": "ad",
-        "name": "每日广告奖励",
-        "description": "每天可领一次，同日重复请求不二次入账",
+        "name": t("reward.ad_name"),
+        "description": t("reward.ad_desc"),
         "kind": "single",
         "amounts": list(DEFAULT_AMOUNTS["ad"]),
     },
     {
         "code": "like_5",
-        "name": "点赞 5 部剧",
-        "description": "当天给 5 部不同的剧点赞，每日可领一次",
+        "name": t("reward.like5_name"),
+        "description": t("reward.like5_desc"),
         "kind": "single",
         "period": "daily",
         "metric": "like",
@@ -89,8 +90,8 @@ REWARD_TASKS: tuple[dict, ...] = (
     },
     {
         "code": "favorite_5",
-        "name": "收藏 5 部剧",
-        "description": "当天收藏 5 部不同的剧，每日可领一次",
+        "name": t("reward.favorite5_name"),
+        "description": t("reward.favorite5_desc"),
         "kind": "single",
         "period": "daily",
         "metric": "favorite",
@@ -99,8 +100,8 @@ REWARD_TASKS: tuple[dict, ...] = (
     },
     {
         "code": "watch_8",
-        "name": "看完 8 集",
-        "description": "当天看完 8 集不同的剧集，每日可领一次",
+        "name": t("reward.watch8_name"),
+        "description": t("reward.watch8_desc"),
         "kind": "single",
         "period": "daily",
         "metric": "complete",

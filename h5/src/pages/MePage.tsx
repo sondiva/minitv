@@ -12,7 +12,7 @@ import {
 } from "../api";
 import { useAuth } from "../auth/AuthProvider";
 import type { Locale } from "../copy";
-import { t } from "../copy";
+import { LANGUAGE_OPTIONS, dateLocale, t } from "../copy";
 import {
   IconBell,
   IconBookmark,
@@ -289,7 +289,7 @@ export function MePage({
             <i>
               {t(locale, user.membership.canceling ? "premium_ends_on" : "premium_active_until", {
                 date: user.membership.until
-                  ? new Date(user.membership.until).toLocaleDateString(locale === "zh" ? "zh-CN" : "en-US", {
+                  ? new Date(user.membership.until).toLocaleDateString(dateLocale(locale), {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
@@ -839,7 +839,7 @@ function LedgerSheet({
 function formatWhen(value: string, locale: Locale): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleString(locale === "zh" ? "zh-CN" : "en-US", {
+  return date.toLocaleString(dateLocale(locale), {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
@@ -962,20 +962,16 @@ function SettingsSheet({
           <div className="me-set-item">
             <span className="me-set-label">{t(locale, "me_language")}</span>
             <div className="me-seg">
-              <button
-                type="button"
-                className={locale === "en" ? "on" : ""}
-                onClick={() => onLocale("en")}
-              >
-                English
-              </button>
-              <button
-                type="button"
-                className={locale === "zh" ? "on" : ""}
-                onClick={() => onLocale("zh")}
-              >
-                中文
-              </button>
+              {LANGUAGE_OPTIONS.map((option) => (
+                <button
+                  key={option.code}
+                  type="button"
+                  className={locale === option.code ? "on" : ""}
+                  onClick={() => onLocale(option.code)}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>

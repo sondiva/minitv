@@ -9,13 +9,14 @@ import '../ui.dart';
 
 const _monthNamesEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/// `2026-10-20T08:00:00Z` → "Oct 20, 2026" / "2026年10月20日".
+/// `2026-10-20T08:00:00Z` → "Oct 20, 2026" / "2026年10月20日" / "20/10/2026".
 String formatDay(String? iso, String language) {
   if (iso == null || iso.isEmpty) return '—';
   final date = DateTime.tryParse(iso);
   if (date == null) return '—';
   final local = date.toLocal();
   if (language == 'zh') return '${local.year}年${local.month}月${local.day}日';
+  if (language == 'vi') return '${local.day}/${local.month}/${local.year}';
   return '${_monthNamesEn[local.month - 1]} ${local.day}, ${local.year}';
 }
 
@@ -34,6 +35,7 @@ String formatWhen(String iso, String language) {
   final hh = local.hour.toString().padLeft(2, '0');
   final mm = local.minute.toString().padLeft(2, '0');
   if (language == 'zh') return '${local.month}月${local.day}日 $hh:$mm';
+  if (language == 'vi') return '${local.day}/${local.month} $hh:$mm';
   return '${_monthNamesEn[local.month - 1]} ${local.day}, $hh:$mm';
 }
 

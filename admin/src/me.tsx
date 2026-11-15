@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import { t } from "./copy";
 
 export type Me = {
   id: number;
@@ -10,19 +11,19 @@ export type Me = {
 };
 
 /** Human labels for `admin_users.role`; keys mirror backend/app/modules/ops/models.py. */
-export const ROLE_LABELS: Record<string, string> = {
-  ops: "运营",
-  finance: "财务",
-  admin: "管理员",
-  partner: "上剧方",
-};
+export function ROLE_LABELS(): Record<string, string> { return {
+  ops: t("me.ops"),
+  finance: t("apikeys.finance_role"),
+  admin: t("me.admin"),
+  partner: t("me.partner"),
+};; }
 
 /** Staff roles only: partners are created from the supplier page, not here. */
-export const ROLE_OPTIONS = [
-  { value: "ops", label: "运营" },
-  { value: "finance", label: "财务" },
-  { value: "admin", label: "管理员" },
-];
+export function ROLE_OPTIONS(){ return [
+  { value: "ops", label: t("me.ops") },
+  { value: "finance", label: t("apikeys.finance_role") },
+  { value: "admin", label: t("me.admin") },
+];; }
 
 /**
  * Roles allowed to create / edit content. Mirrors CONTENT_WRITER_ROLES in

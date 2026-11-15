@@ -7,6 +7,7 @@
  * means the two upload paths cannot drift apart.
  */
 import { api, getToken } from "../api";
+import { t } from "../copy";
 
 export type VideoMeta = { width: number; height: number; durationSeconds: number };
 
@@ -77,12 +78,12 @@ export function directUpload(
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(location ? resolveLocation(location) : base.href);
         } else {
-          reject(new Error(`创建直传会话失败（HTTP ${xhr.status}）`));
+          reject(new Error(t("episodeupload.create_session_http_error", {v0: xhr.status})));
         }
       };
       xhr.onerror = () => {
         bindXhr(null);
-        reject(new Error("创建直传会话失败（网络错误）"));
+        reject(new Error(t("episodeupload.create_session_network_error")));
       };
       xhr.send();
     });
@@ -107,16 +108,16 @@ export function directUpload(
           onProgress(100);
           resolve();
         } else {
-          reject(new Error(`上传失败（HTTP ${xhr.status}）`));
+          reject(new Error(t("episodeupload.upload_http_error", {v0: xhr.status})));
         }
       };
       xhr.onerror = () => {
         bindXhr(null);
-        reject(new Error("上传失败（网络中断）"));
+        reject(new Error(t("episodeupload.upload_network_interrupted")));
       };
       xhr.onabort = () => {
         bindXhr(null);
-        reject(new Error("上传已取消"));
+        reject(new Error(t("episodeupload.upload_cancelled")));
       };
       xhr.send(file);
     });
@@ -140,7 +141,7 @@ export function probeVideo(file: File): Promise<VideoMeta> {
     };
     video.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error("无法读取视频信息，请确认是完整的 MP4 / MOV 文件"));
+      reject(new Error(t("episodeupload.invalid_video_file")));
     };
     video.src = url;
   });
@@ -148,8 +149,8 @@ export function probeVideo(file: File): Promise<VideoMeta> {
 
 /** Display-only label; both orientations are accepted for upload. */
 export function orientationLabel(meta: VideoMeta): string {
-  if (meta.width <= 0 || meta.height <= 0) return "方向未知";
-  return meta.height > meta.width ? "竖版" : "横版";
+  if (meta.width <= 0 || meta.height <= 0) return t("episodeupload.orientation_unknown");
+  return meta.height > meta.width ? t("episodeupload.portrait") : t("episodeupload.landscape");
 }
 
 /** Poll the backend until Bunny finishes transcoding (callback is unset in dev). */

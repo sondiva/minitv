@@ -15,6 +15,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api, errorText } from "../api";
 import { formatTime } from "../hooks";
 import { partnerStage, partnerStageColor } from "./partnerStage";
+import { t } from "../copy";
 
 type Row = {
   id: number;
@@ -41,13 +42,13 @@ type Counts = {
 
 const EMPTY: Counts = { all: 0, draft: 0, pending: 0, approved: 0, published: 0, unpublished: 0 };
 
-const CARDS: { key: keyof Counts; label: string; color: string }[] = [
-  { key: "all", label: "全部剧集", color: "#101828" },
-  { key: "draft", label: "草稿", color: "#667085" },
-  { key: "pending", label: "审核中", color: "#B54708" },
-  { key: "approved", label: "待上架", color: "#175CD3" },
-  { key: "published", label: "已上架", color: "#067647" },
-];
+function CARDS(): { key: keyof Counts; label: string; color: string }[] { return [
+  { key: "all", label: t("dramas.all_dramas"), color: "#101828" },
+  { key: "draft", label: t("common.draft"), color: "#667085" },
+  { key: "pending", label: t("common.in_review"), color: "#B54708" },
+  { key: "approved", label: t("partnerdramas.pending_publish"), color: "#175CD3" },
+  { key: "published", label: t("common.published"), color: "#067647" },
+];; }
 
 export default function PartnerDramas() {
   const navigate = useNavigate();
@@ -96,7 +97,7 @@ export default function PartnerDramas() {
           synopsis: values.synopsis ?? "",
         }),
       });
-      message.success("已创建草稿，继续补封面和分集");
+      message.success(t("partnerdramas.draft_created_continue"));
       setCreateOpen(false);
       form.resetFields();
       navigate(`/partner/dramas/${created.id}`);
@@ -116,7 +117,7 @@ export default function PartnerDramas() {
           gap: 12,
         }}
       >
-        {CARDS.map((card) => {
+        {CARDS().map((card) => {
           const active = card.key === "all" && !status;
           return (
             <div
@@ -140,7 +141,7 @@ export default function PartnerDramas() {
                 <span style={{ fontSize: 24, fontWeight: 700, color: card.color }}>
                   {counts[card.key]}
                 </span>
-                <span style={{ fontSize: 12, color: "#98a2b3" }}>部</span>
+                <span style={{ fontSize: 12, color: "#98a2b3" }}>{t("common.dramas_unit")}</span>
               </div>
             </div>
           );
@@ -149,11 +150,11 @@ export default function PartnerDramas() {
 
       <Space wrap>
         <Button type="primary" onClick={() => setCreateOpen(true)}>
-          + 新建剧集
+          {t("partnerdramas.new_drama_button")}
         </Button>
         <Select
           allowClear
-          placeholder="全部状态"
+          placeholder={t("common.all_status")}
           style={{ width: 160 }}
           value={status}
           onChange={(value) => {
@@ -161,15 +162,15 @@ export default function PartnerDramas() {
             setPage(1);
           }}
           options={[
-            { value: "draft", label: "草稿" },
-            { value: "in_review", label: "审核中" },
-            { value: "published", label: "已上架" },
-            { value: "unpublished", label: "已下架" },
+            { value: "draft", label: t("common.draft") },
+            { value: "in_review", label: t("common.in_review") },
+            { value: "published", label: t("common.published") },
+            { value: "unpublished", label: t("common.unpublished") },
           ]}
         />
         <Input.Search
           allowClear
-          placeholder="搜索剧名 / 剧集ID..."
+          placeholder={t("dramas.search_title_id")}
           style={{ width: 280 }}
           onSearch={(value) => {
             setQ(value);
@@ -177,7 +178,7 @@ export default function PartnerDramas() {
           }}
         />
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-          只显示你名下的剧集；提交审核后由 MiniTV 运营安排上架。
+          {t("partnerdramas.only_own_dramas_note")}
         </Typography.Text>
       </Space>
 
@@ -198,7 +199,7 @@ export default function PartnerDramas() {
         }}
         columns={[
           {
-            title: "封面 / ID",
+            title: t("dramas.cover_id"),
             dataIndex: "cover_url",
             width: 110,
             render: (cover: string, row) => (
@@ -227,7 +228,7 @@ export default function PartnerDramas() {
             ),
           },
           {
-            title: "剧名",
+            title: t("common.drama_name"),
             dataIndex: "title",
             render: (value: string, row) => (
               <div>
@@ -235,13 +236,13 @@ export default function PartnerDramas() {
                   {value}
                 </Link>
                 {row.review_note && (
-                  <div style={{ fontSize: 12, color: "#B42318" }}>驳回：{row.review_note}</div>
+                  <div style={{ fontSize: 12, color: "#B42318" }}>{t("partnerdramas.rejected_note", {v0: row.review_note})}</div>
                 )}
               </div>
             ),
           },
           {
-            title: "状态",
+            title: t("common.status"),
             key: "stage",
             width: 100,
             render: (_, row) => (
@@ -250,44 +251,44 @@ export default function PartnerDramas() {
               </Tag>
             ),
           },
-          { title: "免费集数", dataIndex: "free_episode_count", width: 90 },
-          { title: "单集金币", dataIndex: "coin_price_per_episode", width: 90 },
-          { title: "总集数", dataIndex: "episode_count", width: 80 },
-          { title: "播放量", dataIndex: "play_count", width: 90 },
+          { title: t("partnerdramaedit.free_episodes"), dataIndex: "free_episode_count", width: 90 },
+          { title: t("partnerdramaedit.coins_per_episode"), dataIndex: "coin_price_per_episode", width: 90 },
+          { title: t("dramas.total_episodes"), dataIndex: "episode_count", width: 80 },
+          { title: t("dramas.play_count"), dataIndex: "play_count", width: 90 },
           {
-            title: "最近更新",
+            title: t("dramas.recently_updated"),
             dataIndex: "updated_at",
             width: 150,
             render: (value: string) => formatTime(value),
           },
           {
-            title: "操作",
+            title: t("common.actions"),
             key: "actions",
             width: 80,
-            render: (_, row) => <Link to={`/partner/dramas/${row.id}`}>进入</Link>,
+            render: (_, row) => <Link to={`/partner/dramas/${row.id}`}>{t("dramas.enter")}</Link>,
           },
         ]}
       />
 
       <Modal
-        title="新建剧集"
+        title={t("dramas.create_drama")}
         open={createOpen}
         onCancel={() => setCreateOpen(false)}
         onOk={() => form.submit()}
-        okText="创建"
+        okText={t("staff.create")}
         confirmLoading={creating}
         forceRender
       >
         <Form form={form} layout="vertical" onFinish={create} preserve={false}>
           <Form.Item
-            label="剧名"
+            label={t("common.drama_name")}
             name="title"
-            rules={[{ required: true, message: "请输入剧名" }]}
-            extra="同一供应商内不能重名"
+            rules={[{ required: true, message: t("dramaedit.enter_drama_title") }]}
+            extra={t("partnerdramas.no_duplicate_name")}
           >
             <Input maxLength={200} />
           </Form.Item>
-          <Form.Item label="简介" name="synopsis" extra="可以先留空，提交审核前需 ≥30 字">
+          <Form.Item label={t("drama.synopsis")} name="synopsis" extra={t("partnerdramas.synopsis_min_length_note")}>
             <Input.TextArea rows={3} maxLength={5000} />
           </Form.Item>
         </Form>

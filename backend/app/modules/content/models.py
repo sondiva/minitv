@@ -55,7 +55,7 @@ class Drama(Base):
     published_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     scheduled_publish_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     play_count: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
-    # NULL = platform-owned (self-operated). Partners (上剧方) only ever see
+    # NULL = platform-owned (self-operated). Partners (suppliers) only ever see
     # rows where this equals their own supplier id.
     supplier_id: Mapped[int | None] = mapped_column(ForeignKey("suppliers.id"), nullable=True)
     # Review progress is orthogonal to `status`: a draft stays a draft until an
@@ -75,7 +75,7 @@ class Drama(Base):
             postgresql_where=text("review_state = 'pending'"),
         ),
         # Titles are unique per tenant, not globally: two suppliers may both
-        # carry a "替身新娘". Self-operated rows (supplier_id IS NULL) keep the
+        # carry a "The Stand-in Bride". Self-operated rows (supplier_id IS NULL) keep the
         # old global uniqueness.
         Index(
             "uq_dramas_title_self",

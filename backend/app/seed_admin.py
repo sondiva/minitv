@@ -21,6 +21,7 @@ import secrets
 from sqlalchemy import func, select
 
 from app.db import get_engine, make_session_factory
+from app.i18n import t
 from app.modules.ops.models import ROLE_ADMIN, STATUS_ACTIVE, AdminUser
 from app.modules.ops.service import hash_password
 
@@ -45,7 +46,7 @@ def seed() -> None:
                 password_hash=hash_password(password),
                 role=ROLE_ADMIN,
                 status=STATUS_ACTIVE,
-                display_name="管理员",
+                display_name=t("seed.display_name_admin"),
             )
         )
         db.commit()

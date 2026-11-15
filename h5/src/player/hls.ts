@@ -22,7 +22,7 @@ export function attachHls(
     hls.attachMedia(video);
     hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
       if (data.levels && data.levels.length > 0) {
-        // 短剧为竖屏视频，按短边归一化标准清晰度（例如 480x854 -> 480P, 360x640 -> 360P, 720x1280 -> 720P）
+        // Phim ngắn là video dọc, chuẩn hóa độ phân giải theo cạnh ngắn (VD: 480x854 -> 480P, 360x640 -> 360P, 720x1280 -> 720P)
         const pList = data.levels.map((l) => {
           const shortSide = Math.min(l.width || 0, l.height || 0) || l.height;
           if (shortSide >= 1000) return 1080;

@@ -47,7 +47,7 @@ STATUSES = (STATUS_ACTIVE, STATUS_DISABLED)
 
 
 class Supplier(Base):
-    """A content supplier (上剧方). One supplier owns exactly one login account."""
+    """A content supplier. One supplier owns exactly one login account."""
 
     __tablename__ = "suppliers"
     __table_args__ = (

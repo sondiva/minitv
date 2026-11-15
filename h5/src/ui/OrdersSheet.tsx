@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getOrders, type OrderItem } from "../api";
 import type { Locale } from "../copy";
-import { t } from "../copy";
+import { dateLocale, t } from "../copy";
 import { Sheet } from "./Sheet";
 
 const STATUS_KEY: Record<string, string> = {
@@ -13,7 +13,7 @@ const STATUS_KEY: Record<string, string> = {
 
 function formatWhen(iso: string, locale: Locale): string {
   const date = new Date(iso);
-  return date.toLocaleString(locale === "zh" ? "zh-CN" : "en-US", {
+  return date.toLocaleString(dateLocale(locale), {
     month: "short",
     day: "numeric",
     hour: "2-digit",

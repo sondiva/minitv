@@ -28,6 +28,7 @@ from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.db import get_engine, make_session_factory
+from app.i18n import t
 from app.modules.ops.config_models import ModerationSettings
 from app.modules.social.models import Comment
 
@@ -92,7 +93,7 @@ MIN_KEY_LENGTH = 8
 
 def _fernet():
     if Fernet is None:  # pragma: no cover
-        raise ModerationError("缺少 cryptography 依赖，无法保存密钥")
+        raise ModerationError(t("moderation.no_crypto"))
     secret = os.environ.get(KEY_SECRET_ENV, "").strip()
     if not secret:
         # Local/test convenience only. Production sets MODERATION_KEY_SECRET;
@@ -170,7 +171,7 @@ def set_api_key(settings: ModerationSettings, raw: str) -> None:
     """Encrypt and stage a new key on the row. Caller commits."""
     key = raw.strip()
     if len(key) < MIN_KEY_LENGTH or any(ch.isspace() for ch in key):
-        raise ValueError("密钥格式不正确：至少 8 位且不能包含空格")
+        raise ValueError(t("moderation.key_format"))
     settings.api_key_secret = encrypt_key(key)
 
 
@@ -250,7 +251,7 @@ def classify(
     """
     resolved = api_key(settings, key)
     if not resolved:
-        raise ModerationError("自动审核密钥未配置，请先在后台「自动审核」页填写")
+        raise ModerationError(t("moderation.key_unconfigured"))
 
     base = (settings.base_url or default_base_url()).rstrip("/")
     url = f"{base}/chat/completions"
@@ -287,7 +288,7 @@ def classify(
                     break
                 response = client.post(url, json=payload, headers=headers)
     except httpx.HTTPError as exc:
-        raise ModerationError(f"请求失败：{type(exc).__name__}") from exc
+        raise ModerationError(t("moderation.request_failed", exc=type(exc).__name__)) from exc
 
     latency_ms = int((time.monotonic() - started) * 1000)
     if response.status_code >= 400:
@@ -302,9 +303,9 @@ def classify(
         choice = response.json()["choices"][0]
         content = choice["message"]["content"]
     except (KeyError, IndexError, TypeError, ValueError) as exc:
-        raise ModerationError("响应结构异常") from exc
+        raise ModerationError(t("moderation.bad_response")) from exc
     if choice.get("finish_reason") == "length":
-        raise ModerationError("模型输出被截断，请调大 max_tokens 或换更小的模型")
+        raise ModerationError(t("moderation.truncated"))
     return _normalise(_parse_payload(content or ""), settings.model, latency_ms)
 
 

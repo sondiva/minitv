@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { AuthProvider, useAuth } from "./auth/AuthProvider";
 import { LoginSheet } from "./auth/LoginSheet";
-import { loadLocale, saveLocale, t, type Locale } from "./copy";
+import { loadLocale, NEXT_LOCALE, saveLocale, SWITCH_TO_LABEL, t, type Locale } from "./copy";
 import { IconForYou, IconHome, IconMe, IconRewards, IconSearch } from "./icons";
 import { ForYouPage } from "./pages/ForYouPage";
 import { HomePage } from "./pages/HomePage";
@@ -63,7 +63,7 @@ function AppShell() {
     setLocale(next);
   };
 
-  const switchLocale = () => changeLocale(locale === "zh" ? "en" : "zh");
+  const switchLocale = () => changeLocale(NEXT_LOCALE[locale]);
 
   const playing = dramaId != null;
 
@@ -80,7 +80,7 @@ function AppShell() {
             <h1>{t(locale, TABS.find((item) => item.id === tab)!.key)}</h1>
           )}
           <span style={{ flex: 1 }} />
-          <button className="icon-btn" onClick={switchLocale}>{locale === "zh" ? "EN" : "中"}</button>
+          <button className="icon-btn" onClick={switchLocale}>{SWITCH_TO_LABEL[locale]}</button>
           {!searching && (
             <button className="icon-btn search-btn" onClick={() => setSearching(true)} aria-label={t(locale, "search")}>
               <IconSearch />

@@ -34,7 +34,7 @@ export interface HomePayload {
 export interface ChannelTab {
   code: string;
   title_en: string;
-  title_zh: string;
+  title_zh?: string;
   position: number;
   locked: boolean;
   group_id: number | null;

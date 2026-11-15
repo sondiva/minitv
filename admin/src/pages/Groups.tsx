@@ -28,6 +28,7 @@ import {
 } from "@ant-design/icons";
 import { api, errorText } from "../api";
 import { DragRow, Handle, reorder, type DragVisual } from "./dragSort";
+import { t } from "../copy";
 
 const LIMIT_FALLBACK = 100;
 
@@ -94,20 +95,20 @@ function CoverThumb({ url, width = 40, height = 54 }: { url?: string; width?: nu
         flexShrink: 0,
       }}
     >
-      无封面
+      {t("groups.no_cover")}
     </div>
   );
 }
 
-const DRAMA_STATUS: Record<string, { text: string; color: string }> = {
-  draft: { text: "草稿", color: "default" },
-  in_review: { text: "审核中", color: "orange" },
-  published: { text: "已上架", color: "green" },
-  unpublished: { text: "已下架", color: "red" },
-};
+function DRAMA_STATUS(): Record<string, { text: string; color: string }> { return {
+  draft: { text: t("common.draft"), color: "default" },
+  in_review: { text: t("common.in_review"), color: "orange" },
+  published: { text: t("common.published"), color: "green" },
+  unpublished: { text: t("common.unpublished"), color: "red" },
+};; }
 
 function statusTag(status: string, style?: React.CSSProperties) {
-  const meta = DRAMA_STATUS[status] ?? { text: status, color: "default" };
+  const meta = DRAMA_STATUS()[status] ?? { text: status, color: "default" };
   return (
     <Tag color={meta.color} style={{ margin: 0, borderRadius: 4, fontWeight: 500, ...style }}>
       {meta.text}
@@ -206,7 +207,7 @@ export default function GroupsPage() {
           body: JSON.stringify({ name, position: ordered.length ? ordered[ordered.length - 1].position + 1 : 0 }),
         });
       }
-      message.success("已保存");
+      message.success(t("common.saved"));
       setCreating(false);
       setEditing(null);
       await load();
@@ -221,7 +222,7 @@ export default function GroupsPage() {
         method: "PATCH",
         body: JSON.stringify({ status: row.status === "active" ? "inactive" : "active" }),
       });
-      message.success(row.status === "active" ? "已停用分组" : "已启用分组");
+      message.success(row.status === "active" ? t("groups.group_deactivated") : t("groups.group_enabled"));
       await load();
     } catch (e) {
       message.error(errorText(e));
@@ -234,16 +235,16 @@ export default function GroupsPage() {
       <Space style={{ width: "100%", justifyContent: "space-between" }} align="center" wrap>
         <Space align="center" size={12} wrap>
           <Typography.Title level={4} style={{ margin: 0 }}>
-            首页分组
+            {t("groups.home_groups")}
           </Typography.Title>
           <Tag bordered={false} style={{ background: "#f2f4f7", color: "#475467", borderRadius: 12, padding: "2px 10px", margin: 0 }}>
-            共 {ordered.length} 个分组
+            {t("groups.total_groups", {v0: ordered.length})}
           </Tag>
           <Tag bordered={false} style={{ background: "#ecfdf3", color: "#027a48", borderRadius: 12, padding: "2px 10px", margin: 0 }}>
-            {activeCount} 个启用
+            {t("groups.active_groups", {v0: activeCount})}
           </Tag>
           <Tag bordered={false} style={{ background: "#eff8ff", color: "#175cd3", borderRadius: 12, padding: "2px 10px", margin: 0 }}>
-            收纳 {totalDramas} 部剧
+            {t("groups.holds_dramas", {v0: totalDramas})}
           </Tag>
         </Space>
         <Button
@@ -256,7 +257,7 @@ export default function GroupsPage() {
             setCreating(true);
           }}
         >
-          新建分组
+          {t("groups.create_group")}
         </Button>
       </Space>
 
@@ -266,7 +267,7 @@ export default function GroupsPage() {
         showIcon
         message={
           <span style={{ fontSize: 13, color: "#475467" }}>
-            拖动左侧手柄调整顺序，即客户端首页展示顺序。每组最多容纳 <strong>{LIMIT_FALLBACK}</strong> 部剧。停用后客户端不展示该分组，组内剧集数据仍保留。
+            {t("groups.drag_hint_prefix")} <strong>{LIMIT_FALLBACK}</strong> {t("groups.drag_hint_suffix")}
           </span>
         }
         style={{
@@ -289,7 +290,7 @@ export default function GroupsPage() {
             background: "#fff",
           }}
         >
-          <ListHead columns={GROUP_COLS} labels={["排序", "分组名称", "剧集容量", "状态", "操作"]} />
+          <ListHead columns={GROUP_COLS} labels={[t("groups.sort_order"), t("groups.group_name"), t("groups.drama_capacity"), t("common.status"), t("common.actions")]} />
           <div style={{ padding: "10px 12px", display: "grid", gap: 6, minHeight: 60 }}>
             {ordered.map((row, index) => {
               const visual: DragVisual = {
@@ -359,13 +360,13 @@ export default function GroupsPage() {
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
                           }}
-                          title="点击进入组内剧管理"
+                          title={t("groups.click_manage_dramas")}
                         >
                           {row.name}
                         </Link>
                         {row.status !== "active" && (
                           <Tag bordered={false} style={{ fontSize: 11, background: "#f2f4f7", color: "#667085", margin: 0 }}>
-                            已停用
+                            {t("groups.deactivated")}
                           </Tag>
                         )}
                       </div>
@@ -374,10 +375,10 @@ export default function GroupsPage() {
                       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12 }}>
                           <span style={{ fontWeight: 600, color: isFull ? "#d92d20" : "#344054" }}>
-                            {row.drama_count} <span style={{ color: "#98a2b3", fontWeight: 400 }}>/ {limit} 部</span>
+                            {row.drama_count} <span style={{ color: "#98a2b3", fontWeight: 400 }}>/ {limit} {t("common.dramas_unit")}</span>
                           </span>
                           <span style={{ fontSize: 11, color: isFull ? "#d92d20" : fillRate >= 0.8 ? "#b54708" : "#98a2b3" }}>
-                            {isFull ? "已满额" : `余 ${limit - row.drama_count}`}
+                            {isFull ? t("groups.full_capacity") : t("groups.remaining_count", {v0: limit - row.drama_count})}
                           </span>
                         </div>
                         <Progress
@@ -401,7 +402,7 @@ export default function GroupsPage() {
                                 color: row.status === "active" ? "#027a48" : "#667085",
                               }}
                             >
-                              {row.status === "active" ? "启用中" : "已停用"}
+                              {row.status === "active" ? t("groups.active_status") : t("groups.deactivated")}
                             </span>
                           }
                         />
@@ -416,7 +417,7 @@ export default function GroupsPage() {
                           style={{ fontWeight: 600, paddingInline: 4 }}
                           onClick={() => navigate(`/groups/${row.id}`)}
                         >
-                          管理剧
+                          {t("groups.manage_dramas")}
                         </Button>
                         <Button
                           type="text"
@@ -429,19 +430,19 @@ export default function GroupsPage() {
                             setCreating(true);
                           }}
                         >
-                          改名
+                          {t("groups.rename")}
                         </Button>
                         {row.status === "active" ? (
                           <Popconfirm
-                            title="确认停用该分组？"
-                            description="停用后客户端首页将隐藏此分组，组内剧集仍保留。"
+                            title={t("groups.confirm_deactivate")}
+                            description={t("groups.deactivate_note")}
                             onConfirm={() => toggle(row)}
-                            okText="停用"
-                            cancelText="取消"
+                            okText={t("groups.deactivate")}
+                            cancelText={t("common.cancel")}
                             okButtonProps={{ danger: true }}
                           >
                             <Button type="text" size="small" danger style={{ paddingInline: 6 }}>
-                              停用
+                              {t("groups.deactivate")}
                             </Button>
                           </Popconfirm>
                         ) : (
@@ -451,7 +452,7 @@ export default function GroupsPage() {
                             style={{ color: "#027a48", paddingInline: 6, fontWeight: 500 }}
                             onClick={() => toggle(row)}
                           >
-                            启用
+                            {t("common.enable")}
                           </Button>
                         )}
                       </Space>
@@ -463,7 +464,7 @@ export default function GroupsPage() {
             {!loading && !ordered.length ? (
               <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="还没有分组，点右上角「新建分组」开始创建"
+                description={t("groups.empty_hint")}
                 style={{ margin: "24px 0" }}
               />
             ) : null}
@@ -472,16 +473,16 @@ export default function GroupsPage() {
       </Spin>
 
       <Modal
-        title={editing ? `改名 · ${editing.name}` : "新建分组"}
+        title={editing ? t("groups.rename_title", {v0: editing.name}) : t("groups.create_group")}
         open={creating}
         onCancel={() => setCreating(false)}
         onOk={() => form.submit()}
-        okText="保存"
+        okText={t("common.save")}
         destroyOnClose
       >
         <Form form={form} layout="vertical" onFinish={saveName} style={{ marginTop: 12 }}>
-          <Form.Item name="name" label="分组名称" rules={[{ required: true, message: "请填写分组名称" }]}>
-            <Input maxLength={64} placeholder="例如：本周推荐、逆袭霸总" autoFocus />
+          <Form.Item name="name" label={t("groups.group_name")} rules={[{ required: true, message: t("groups.enter_group_name") }]}>
+            <Input maxLength={64} placeholder={t("groups.name_example")} autoFocus />
           </Form.Item>
         </Form>
       </Modal>
@@ -545,7 +546,7 @@ export function GroupDetailPage() {
   const remove = async (dramaId: number) => {
     try {
       await api(`/admin/v1/groups/${id}/dramas/${dramaId}`, { method: "DELETE" });
-      message.success("已移出");
+      message.success(t("groups.removed"));
       await load();
     } catch (e) {
       message.error(errorText(e));
@@ -559,8 +560,8 @@ export function GroupDetailPage() {
       {/* 规范面包屑导航 */}
       <Breadcrumb
         items={[
-          { title: <Link to="/groups">首页分组</Link> },
-          { title: group?.name ?? "组内剧管理" },
+          { title: <Link to="/groups">{t("groups.home_groups")}</Link> },
+          { title: group?.name ?? t("groups.in_group_management") },
         ]}
       />
 
@@ -568,7 +569,7 @@ export function GroupDetailPage() {
       <Space style={{ width: "100%", justifyContent: "space-between" }} align="center" wrap>
         <Space align="center" size={12} wrap>
           <Typography.Title level={4} style={{ margin: 0 }}>
-            {group?.name ?? "组内剧"}
+            {group?.name ?? t("groups.in_group_dramas")}
           </Typography.Title>
           <Tag
             bordered={false}
@@ -581,15 +582,15 @@ export function GroupDetailPage() {
               margin: 0,
             }}
           >
-            {group?.drama_count ?? 0} / {groupLimit(group)} 部剧
+            {t("groups.count_slash_dramas", {v0: group?.drama_count ?? 0, v1: groupLimit(group)})}
           </Tag>
           {group?.status === "active" ? (
             <Tag bordered={false} style={{ background: "#ecfdf3", color: "#027a48", borderRadius: 12, margin: 0 }}>
-              启用中
+              {t("groups.active_status")}
             </Tag>
           ) : (
             <Tag bordered={false} style={{ background: "#f2f4f7", color: "#667085", borderRadius: 12, margin: 0 }}>
-              已停用
+              {t("groups.deactivated")}
             </Tag>
           )}
         </Space>
@@ -600,7 +601,7 @@ export function GroupDetailPage() {
           onClick={() => setPickerOpen(true)}
           style={{ fontWeight: 500 }}
         >
-          添加剧
+          {t("groups.add_drama")}
         </Button>
       </Space>
 
@@ -610,7 +611,7 @@ export function GroupDetailPage() {
         showIcon
         message={
           <span style={{ fontSize: 13, color: "#475467" }}>
-            草稿与已下架剧集也可以保留在组内；客户端仅向用户展示<strong>已上架</strong>的剧集。拖动左侧手柄仅调整该组内的剧集展示次序。
+            {t("groups.draft_note_prefix")}<strong>{t("common.published")}</strong>{t("groups.draft_note_suffix")}
           </span>
         }
         style={{
@@ -633,7 +634,7 @@ export function GroupDetailPage() {
             background: "#fff",
           }}
         >
-          <ListHead columns={DETAIL_COLS} labels={["排序", "剧目信息", "上架状态", "操作"]} />
+          <ListHead columns={DETAIL_COLS} labels={[t("groups.sort_order"), t("groups.drama_info"), t("groups.publish_status"), t("common.actions")]} />
           <div style={{ padding: "10px 12px", display: "grid", gap: 6, minHeight: 60 }}>
             {items.map((row, index) => {
               const visual: DragVisual = {
@@ -715,15 +716,15 @@ export function GroupDetailPage() {
                       {/* 操作 */}
                       <div>
                         <Popconfirm
-                          title="移出剧集"
-                          description="确定从本分组移出这部剧？（剧集本身不受影响）"
+                          title={t("groups.remove_drama")}
+                          description={t("groups.confirm_remove_drama")}
                           onConfirm={() => remove(row.id)}
-                          okText="移出"
-                          cancelText="取消"
+                          okText={t("groups.remove_from_group")}
+                          cancelText={t("common.cancel")}
                           okButtonProps={{ danger: true }}
                         >
                           <Button type="text" size="small" danger icon={<DeleteOutlined />} style={{ paddingInline: 6 }}>
-                            移出
+                            {t("groups.remove_from_group")}
                           </Button>
                         </Popconfirm>
                       </div>
@@ -735,7 +736,7 @@ export function GroupDetailPage() {
             {!loading && !items.length ? (
               <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="组里还没有剧，点右上角「添加剧」"
+                description={t("groups.no_drama_hint")}
                 style={{ margin: "24px 0" }}
               />
             ) : null}
@@ -803,7 +804,7 @@ function AddDramasModal({
     setPicked((current) => {
       if (current.includes(dramaId)) return current.filter((id) => id !== dramaId);
       if (current.length >= room) {
-        message.warning(`这组还能再加 ${room} 部`);
+        message.warning(t("groups.can_add_more", {v0: room}));
         return current;
       }
       return [...current, dramaId];
@@ -819,7 +820,7 @@ function AddDramasModal({
           body: JSON.stringify({ drama_id: dramaId, confirm: true }),
         });
       }
-      message.success(`已加入 ${picked.length} 部`);
+      message.success(t("groups.added_count", {v0: picked.length}));
       await onSaved();
     } catch (e) {
       message.error(errorText(e));
@@ -830,12 +831,12 @@ function AddDramasModal({
 
   return (
     <Modal
-      title="添加剧入组"
+      title={t("groups.add_drama_to_group")}
       open
       onCancel={onClose}
       onOk={confirm}
-      okText={picked.length ? `确认添加 (${picked.length})` : "确认添加"}
-      cancelText="取消"
+      okText={picked.length ? t("groups.confirm_add_count", {v0: picked.length}) : t("groups.confirm_add")}
+      cancelText={t("common.cancel")}
       okButtonProps={{ disabled: picked.length === 0 }}
       confirmLoading={saving}
       destroyOnClose
@@ -843,7 +844,7 @@ function AddDramasModal({
     >
       <Input.Search
         autoFocus
-        placeholder="搜索剧名或 ID"
+        placeholder={t("groups.search_drama_id")}
         value={q}
         onChange={(e) => setQ(e.target.value)}
         allowClear
@@ -862,10 +863,10 @@ function AddDramasModal({
         }}
       >
         <span style={{ color: "#475467" }}>
-          已选择 <strong style={{ color: "#1677ff" }}>{picked.length}</strong> 部剧
+          {t("groups.selected")} <strong style={{ color: "#1677ff" }}>{picked.length}</strong> {t("groups.dramas_unit")}
         </span>
         <span style={{ color: "#667085" }}>
-          本组还可容纳 <strong>{room}</strong> 部
+          {t("groups.capacity_remaining")} <strong>{room}</strong> {t("common.dramas_unit")}
         </span>
       </div>
       <div
@@ -910,7 +911,7 @@ function AddDramasModal({
               </div>
               {already ? (
                 <Tag bordered={false} style={{ background: "#f2f4f7", color: "#98a2b3", margin: 0 }}>
-                  已在组内
+                  {t("groups.already_in_group")}
                 </Tag>
               ) : (
                 <Button
@@ -919,7 +920,7 @@ function AddDramasModal({
                   onClick={() => toggle(hit.id)}
                   style={{ borderRadius: 4 }}
                 >
-                  {isSelected ? "已选" : "选择"}
+                  {isSelected ? t("groups.selected_short") : t("groups.select")}
                 </Button>
               )}
             </div>
@@ -927,7 +928,7 @@ function AddDramasModal({
         })}
         {!hits.length ? (
           <div style={{ padding: "24px 0", textAlign: "center" }}>
-            <Typography.Text type="secondary">{loading ? "正在加载剧库..." : "没有匹配的剧集"}</Typography.Text>
+            <Typography.Text type="secondary">{loading ? t("groups.loading_library") : t("groups.no_matching_drama")}</Typography.Text>
           </div>
         ) : null}
       </div>
@@ -966,7 +967,7 @@ export function DramaGroupsPanel({ dramaId }: { dramaId: string }) {
         method: "POST",
         body: JSON.stringify({ drama_id: Number(dramaId), confirm: true }),
       });
-      message.success("已加入");
+      message.success(t("groups.joined"));
       await load();
     } catch (e) {
       message.error(errorText(e));
@@ -976,7 +977,7 @@ export function DramaGroupsPanel({ dramaId }: { dramaId: string }) {
   const leave = async (groupId: number) => {
     try {
       await api(`/admin/v1/groups/${groupId}/dramas/${dramaId}`, { method: "DELETE" });
-      message.success("已移出");
+      message.success(t("groups.removed"));
       await load();
     } catch (e) {
       message.error(errorText(e));
@@ -984,8 +985,8 @@ export function DramaGroupsPanel({ dramaId }: { dramaId: string }) {
   };
 
   const rank = (row: (typeof rows)[number]) => {
-    if (row.position_in_group == null) return "组内位置待定";
-    return `组内第 ${row.position_in_group + 1} 位`;
+    if (row.position_in_group == null) return t("groups.position_pending");
+    return t("groups.position_in_group", {v0: row.position_in_group + 1});
   };
 
   const groupCard = (row: (typeof rows)[number], joinedCard: boolean) => {
@@ -1013,12 +1014,12 @@ export function DramaGroupsPanel({ dramaId }: { dramaId: string }) {
           <Link to={`/groups/${row.id}`} style={{ fontWeight: 600, fontSize: 15 }}>
             {row.name}
           </Link>
-          {inactive ? <Tag>停用</Tag> : joinedCard ? <Tag color="green">已加入</Tag> : <Tag color="blue">启用</Tag>}
+          {inactive ? <Tag>{t("groups.deactivate")}</Tag> : joinedCard ? <Tag color="green">{t("groups.joined")}</Tag> : <Tag color="blue">{t("common.enable")}</Tag>}
         </div>
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "rgba(0,0,0,0.45)", marginBottom: 6 }}>
-            <span>{row.drama_count}/{cap} 部</span>
-            <span>{full ? "已满" : `还可加 ${room} 部`}</span>
+            <span>{row.drama_count}/{cap} {t("common.dramas_unit")}</span>
+            <span>{full ? t("groups.full") : t("groups.can_add_count", {v0: room})}</span>
           </div>
           <div style={{ height: 4, borderRadius: 2, background: "rgba(0,0,0,0.06)", overflow: "hidden" }}>
             <div style={{ width: `${fill * 100}%`, height: "100%", background: barColor }} />
@@ -1028,18 +1029,18 @@ export function DramaGroupsPanel({ dramaId }: { dramaId: string }) {
           ) : null}
         </div>
         {joinedCard ? (
-          <Popconfirm title="从该分组移出？" onConfirm={() => leave(row.id)} okText="移出" cancelText="取消">
+          <Popconfirm title={t("groups.confirm_leave")} onConfirm={() => leave(row.id)} okText={t("groups.remove_from_group")} cancelText={t("common.cancel")}>
             <Button size="small" danger block>
-              移出
+              {t("groups.remove_from_group")}
             </Button>
           </Popconfirm>
         ) : full || inactive ? (
           <Button size="small" block disabled>
-            {full ? "已满" : "已停用"}
+            {full ? t("groups.full") : t("groups.deactivated")}
           </Button>
         ) : (
           <Button size="small" type="primary" ghost block onClick={() => join(row.id)}>
-            加入
+            {t("groups.join")}
           </Button>
         )}
       </div>
@@ -1056,7 +1057,7 @@ export function DramaGroupsPanel({ dramaId }: { dramaId: string }) {
     <div>
       {joined.length ? (
         <div>
-          <Typography.Text strong>已加入 {joined.length} 个分组</Typography.Text>
+          <Typography.Text strong>{t("groups.joined_groups", {v0: joined.length})}</Typography.Text>
           {cardGrid(joined, true)}
         </div>
       ) : (
@@ -1069,34 +1070,34 @@ export function DramaGroupsPanel({ dramaId }: { dramaId: string }) {
             maxWidth: 572,
           }}
         >
-          <Typography.Text strong>还没加入任何分组</Typography.Text>
+          <Typography.Text strong>{t("groups.not_joined_any")}</Typography.Text>
           <div style={{ marginTop: 4, color: "rgba(0,0,0,0.45)", fontSize: 13 }}>
-            下面选一个分组加入。加入后会出现在 App 首页对应分组里，组内顺序到首页分组页调整。
+            {t("groups.join_hint")}
           </div>
         </div>
       )}
 
       <div style={{ marginTop: 18 }}>
-        <Typography.Text strong>{joined.length ? "还可加入" : "选择分组"}</Typography.Text>
+        <Typography.Text strong>{joined.length ? t("groups.can_join") : t("groups.select_group")}</Typography.Text>
         {!rows.length && !loading ? (
           <Typography.Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>
-            还没有分组，先到
-            <Link to="/groups"> 首页分组 </Link>
-            新建。
+            {t("groups.no_group_yet_prefix")}
+            <Link to="/groups"> {t("groups.home_groups")} </Link>
+            {t("groups.create_suffix")}
           </Typography.Paragraph>
         ) : null}
         {available.length ? cardGrid(available, false) : null}
         {joined.length && !available.length && !loading ? (
           <Typography.Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>
-            没有还能加入的分组。
+            {t("groups.no_joinable_group")}
           </Typography.Paragraph>
         ) : null}
       </div>
 
       <Typography.Paragraph type="secondary" style={{ marginTop: 14, marginBottom: 0 }}>
-        组内顺序在
-        <Link to="/groups"> 首页分组 </Link>
-        里调整。这里只决定这部剧属于哪些组。
+        {t("groups.order_hint_prefix")}
+        <Link to="/groups"> {t("groups.home_groups")} </Link>
+        {t("groups.order_hint_suffix")}
       </Typography.Paragraph>
     </div>
   );

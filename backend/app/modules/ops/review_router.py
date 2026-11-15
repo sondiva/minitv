@@ -18,6 +18,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.i18n import t
 from app.modules.account import mail
 from app.modules.common.models import AuditLog
 from app.modules.content.models import Drama, Episode
@@ -143,15 +144,15 @@ def _notify(db: Session, drama: Drama, decision: str, note: str) -> None:
         return
     if not mail.configured():
         return
-    verdict = "已通过" if decision == "approve" else "已驳回"
-    body = f"《{drama.title}》{verdict}。"
+    verdict = t("review.approved") if decision == "approve" else t("review.rejected")
+    body = t("review.email_body", title=drama.title, verdict=verdict)
     if note:
-        body += f"\n\n运营备注：{note}"
-    body += "\n\n登录 MiniTV 合作方后台查看详情。"
+        body += t("review.note_prefix", note=note)
+    body += t("review.email_footer")
     try:
         mail.send_email(
             to=supplier.contact_email,
-            subject=f"MiniTV 审核结果：{drama.title} {verdict}",
+            subject=t("review.email_subject", title=drama.title, verdict=verdict),
             text=body,
         )
     except mail.MailError as exc:
@@ -176,8 +177,8 @@ def _decide_one(
     if result.rowcount == 0:
         drama = db.get(Drama, drama_id)
         if drama is None:
-            return "剧集不存在"
-        return f"当前状态 {drama.review_state}，不是待审核"
+            return t("drama.not_found")
+        return t("drama.not_pending", state=drama.review_state)
     drama = db.get(Drama, drama_id)
     db.add(
         AuditLog(
@@ -199,7 +200,7 @@ def batch_decision(
     actor: AdminUser = Depends(_require_reviewer),
 ):
     if body.decision == "reject" and not body.note.strip():
-        raise HTTPException(status_code=422, detail="驳回必须填写原因")
+        raise HTTPException(status_code=422, detail=t("drama.reject_reason_required"))
     batch_id = uuid.uuid4().hex
     done: list[int] = []
     skipped: list[dict] = []
@@ -225,7 +226,7 @@ def one_decision(
     actor: AdminUser = Depends(_require_reviewer),
 ):
     if body.decision == "reject" and not body.note.strip():
-        raise HTTPException(status_code=422, detail="驳回必须填写原因")
+        raise HTTPException(status_code=422, detail=t("drama.reject_reason_required"))
     reason = _decide_one(db, drama_id, body.decision, body.note.strip(), actor, uuid.uuid4().hex)
     if reason:
         raise HTTPException(status_code=409, detail=reason)
@@ -246,20 +247,20 @@ def publish_reviewed(
     if drama is None:
         raise HTTPException(status_code=404, detail="drama not found")
     if drama.supplier_id is None:
-        raise HTTPException(status_code=400, detail="该接口只用于上剧方剧集")
+        raise HTTPException(status_code=400, detail=t("drama.review_only_partner"))
     if drama.review_state != "approved":
         raise HTTPException(
             status_code=409,
-            detail={"code": "not_approved", "message": "审核通过后才能上架"},
+            detail={"code": "not_approved", "message": t("drama.not_approved_publish")},
         )
     episodes = db.scalars(select(Episode).where(Episode.drama_id == drama.id)).all()
     if not episodes:
-        raise HTTPException(status_code=409, detail="没有分集，无法上架")
+        raise HTTPException(status_code=409, detail=t("drama.no_episodes_publish"))
     not_ready = [e.episode_number for e in episodes if e.status not in ("in_review", "published")]
     if not_ready:
         raise HTTPException(
             status_code=409,
-            detail={"code": "episodes_not_ready", "message": f"第 {not_ready} 集未就绪"},
+            detail={"code": "episodes_not_ready", "message": t("drama.episode_not_ready", number=not_ready)},
         )
     try:
         for episode in episodes:

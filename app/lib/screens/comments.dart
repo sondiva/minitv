@@ -159,7 +159,7 @@ class _CommentSheetState extends State<CommentSheet> {
   @override
   Widget build(BuildContext context) {
     return AppSheet(
-      title: total > 0 ? '${copy.t('comments')} · ${formatCount(total, zh: copy.zh)}' : copy.t('comments'),
+      title: total > 0 ? '${copy.t('comments')} · ${formatCount(total, locale: copy.locale)}' : copy.t('comments'),
       onClose: widget.onClose,
       heightFactor: 0.72,
       child: Column(
@@ -238,7 +238,7 @@ class _CommentSheetState extends State<CommentSheet> {
               children: [
                 Icon(liked ? Icons.favorite : Icons.favorite_border, color: liked ? gold : Colors.white38, size: 16),
                 if (likeCount > 0)
-                  Text(formatCount(likeCount, zh: copy.zh), style: const TextStyle(color: Colors.white38, fontSize: 10)),
+                  Text(formatCount(likeCount, locale: copy.locale), style: const TextStyle(color: Colors.white38, fontSize: 10)),
               ],
             ),
           ),

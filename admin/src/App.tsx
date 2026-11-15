@@ -53,6 +53,7 @@ import {
   PlansPage,
   UsersPage,
 } from "./pages/StagePages";
+import { getLocale, setLocale, subscribeLocale, t, type Locale } from "./copy";
 
 const { Sider, Header, Content } = Layout;
 const { useBreakpoint } = Grid;
@@ -62,34 +63,34 @@ const SIDER_WIDTH = 208;
  *  stops squeezing the page on tablets and phones. */
 const DESKTOP_QUERY = "(min-width: 992px)";
 
-const ITEMS: { key: string; label: string; roles?: string[] }[] = [
-  { key: "/dashboard", label: "数据看板", roles: ["ops", "finance", "admin"] },
-  { key: "/dramas", label: "剧集管理", roles: ["ops", "admin"] },
-  { key: "/reviews", label: "待审核", roles: ["ops", "admin"] },
-  { key: "/groups", label: "首页分组", roles: ["ops", "admin"] },
-  { key: "/users", label: "用户管理", roles: ["finance", "admin"] },
+function ITEMS(): { key: string; label: string; roles?: string[] }[] { return [
+  { key: "/dashboard", label: t("dashboard.title"), roles: ["ops", "finance", "admin"] },
+  { key: "/dramas", label: t("app.drama_management"), roles: ["ops", "admin"] },
+  { key: "/reviews", label: t("common.pending_review"), roles: ["ops", "admin"] },
+  { key: "/groups", label: t("groups.home_groups"), roles: ["ops", "admin"] },
+  { key: "/users", label: t("users.title"), roles: ["finance", "admin"] },
   // 运营中心（推送记录）暂不开放：当前只是台账占位，没有真实推送通道，先隐藏入口。
   // 恢复时把下面一行和 /ops 路由一起放回来即可。
   // { key: "/ops", label: "运营中心" },
-  { key: "/home-ops", label: "首页运营", roles: ["ops", "admin"] },
-  { key: "/rewards", label: "金币与任务", roles: ["ops", "admin"] },
-  { key: "/comments", label: "评论审核", roles: ["ops", "admin"] },
-  { key: "/moderation", label: "自动审核", roles: ["ops", "admin"] },
-  { key: "/finance", label: "财务订单", roles: ["finance", "admin"] },
-  { key: "/settlements", label: "结算单", roles: ["finance", "admin"] },
-  { key: "/plans", label: "会员套餐", roles: ["finance", "admin"] },
-  { key: "/tags", label: "标签库", roles: ["ops", "admin"] },
+  { key: "/home-ops", label: t("homeops.home_ops"), roles: ["ops", "admin"] },
+  { key: "/rewards", label: t("app.coins_tasks"), roles: ["ops", "admin"] },
+  { key: "/comments", label: t("comments.title"), roles: ["ops", "admin"] },
+  { key: "/moderation", label: t("moderation.auto_review"), roles: ["ops", "admin"] },
+  { key: "/finance", label: t("app.finance_orders"), roles: ["finance", "admin"] },
+  { key: "/settlements", label: t("app.settlements"), roles: ["finance", "admin"] },
+  { key: "/plans", label: t("plans.title"), roles: ["finance", "admin"] },
+  { key: "/tags", label: t("app.tag_library"), roles: ["ops", "admin"] },
   // 员工账号只对管理员开放：运营/财务看到入口也只会拿到 403。
-  { key: "/staff", label: "账号管理", roles: ["admin"] },
+  { key: "/staff", label: t("app.account_management"), roles: ["admin"] },
   // 密钥签发是超管动作，与账号管理同级。
-  { key: "/api-keys", label: "API 密钥", roles: ["admin"] },
-  { key: "/suppliers", label: "上剧方管理", roles: ["admin"] },
+  { key: "/api-keys", label: t("app.api_keys"), roles: ["admin"] },
+  { key: "/suppliers", label: t("app.supplier_management"), roles: ["admin"] },
   // 上剧方（partner）只看到自己的剧集；其它入口一律不渲染。
-  { key: "/partner/dramas", label: "我的剧集", roles: ["partner"] },
-  { key: "/partner/stats", label: "数据中心", roles: ["partner"] },
-  { key: "/partner/settlements", label: "结算单", roles: ["partner"] },
-  { key: "/partner/api-keys", label: "API 密钥", roles: ["partner"] },
-];
+  { key: "/partner/dramas", label: t("app.my_dramas"), roles: ["partner"] },
+  { key: "/partner/stats", label: t("app.data_center"), roles: ["partner"] },
+  { key: "/partner/settlements", label: t("app.settlements"), roles: ["partner"] },
+  { key: "/partner/api-keys", label: t("app.api_keys"), roles: ["partner"] },
+];; }
 
 export default function App() {
   const navigate = useNavigate();
@@ -105,6 +106,8 @@ export default function App() {
   const [siderCollapsed, setSiderCollapsed] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [locale, setLocaleState] = useState<Locale>(getLocale());
+  useEffect(() => subscribeLocale(setLocaleState), []);
   const screens = useBreakpoint();
   // useBreakpoint() is empty on the first render; fall back to a media query so
   // phones do not flash the desktop shell before hydration settles.
@@ -172,7 +175,7 @@ export default function App() {
       clearToken();
       setMe(null);
       setLoggingOut(false);
-      message.success("已退出登录");
+      message.success(t("app.logged_out"));
       navigate("/login", { replace: true });
     }
   };
@@ -181,18 +184,18 @@ export default function App() {
     items: [
       {
         type: "group",
-        label: `登录账号：${account.username}（${ROLE_LABELS[account.role] ?? account.role}）`,
+        label: t("app.logged_in_account", {v0: account.username, v1: ROLE_LABELS()[account.role] ?? account.role}),
         children: [
           {
             key: "password",
             icon: <KeyOutlined />,
-            label: "修改密码",
+            label: t("app.change_password"),
           },
           {
             key: "logout",
             danger: true,
             icon: <LogoutOutlined />,
-            label: "退出登录",
+            label: t("app.logout"),
           },
         ],
       },
@@ -226,7 +229,7 @@ export default function App() {
         }}
       >
         <Spin />
-        <Typography.Text type="secondary">正在校验登录状态…</Typography.Text>
+        <Typography.Text type="secondary">{t("app.verifying_login")}</Typography.Text>
       </div>
     );
   }
@@ -246,17 +249,16 @@ export default function App() {
         <Card style={{ maxWidth: 420, width: "100%" }}>
           <Space direction="vertical" size="middle" style={{ width: "100%" }}>
             <Typography.Title level={4} style={{ margin: 0 }}>
-              无法验证登录状态
+              {t("app.cannot_verify_login")}
             </Typography.Title>
             <Typography.Text type="secondary">
-              会话服务暂时不可用（或网络中断），后台无法确认你的账号，因此不会展示任何数据。
-              可以直接重试；如果反复失败，请重新登录并联系管理员。
+              {t("app.session_unavailable")}
             </Typography.Text>
             <Space>
               <Button type="primary" onClick={() => window.location.reload()}>
-                重试
+                {t("common.retry")}
               </Button>
-              <Button onClick={() => forceReauth("manual")}>重新登录</Button>
+              <Button onClick={() => forceReauth("manual")}>{t("app.relogin")}</Button>
             </Space>
           </Space>
         </Card>
@@ -273,15 +275,15 @@ export default function App() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const selectedItem = [...ITEMS]
+  const selectedItem = [...ITEMS()]
     .sort((a, b) => b.key.length - a.key.length)
     .find((item) => location.pathname === item.key || location.pathname.startsWith(`${item.key}/`));
   const selected = selectedItem?.key ?? "/dramas";
-  const pageTitle = selectedItem?.label ?? "剧集管理";
+  const pageTitle = selectedItem?.label ?? t("app.drama_management");
 
   // Role-gated entries stay hidden until `/auth/me` resolves, so a non-admin
   // never sees a menu item that would only 403. Unrestricted items pass through.
-  const visibleItems = ITEMS.filter(
+  const visibleItems = ITEMS().filter(
     (item) => !item.roles || (me !== null && item.roles.includes(me.role))
   );
 
@@ -291,7 +293,7 @@ export default function App() {
         <div
           style={{ color: "#E53B3E", fontSize: 18, fontWeight: 700, padding: "20px 16px 8px" }}
         >
-          {me?.role === "partner" ? "MiniTV 合作方" : "MiniTV 后台"}
+          {me?.role === "partner" ? t("app.partner_title") : t("app.admin_title")}
         </div>
       )}
       <Menu
@@ -349,14 +351,14 @@ export default function App() {
               {isDesktop ? (
                 <Button
                   type="text"
-                  aria-label={siderCollapsed ? "展开导航" : "收起导航"}
+                  aria-label={siderCollapsed ? t("app.expand_nav") : t("app.collapse_nav")}
                   icon={siderCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                   onClick={() => setSiderCollapsed((value) => !value)}
                 />
               ) : (
                 <Button
                   type="text"
-                  aria-label="打开导航菜单"
+                  aria-label={t("app.open_nav_menu")}
                   icon={<MenuOutlined />}
                   onClick={() => setNavOpen(true)}
                 />
@@ -366,12 +368,19 @@ export default function App() {
               </Typography.Text>
             </Space>
             <Space size={8}>
+              <Button
+                type="text"
+                aria-label={locale === "vi" ? t("app.switch_to_chinese") : t("app.switch_to_vietnamese")}
+                onClick={() => setLocale(locale === "vi" ? "zh" : "vi")}
+              >
+                {locale === "vi" ? "中文" : "Tiếng Việt"}
+              </Button>
               {me && (
                 // 账号区即退出入口：头像 + 名字 + 角色，点开是「退出登录」菜单。
                 <Dropdown menu={accountMenu(me)} placement="bottomRight" trigger={["click"]}>
                   <Button
                     type="text"
-                    aria-label="账号菜单"
+                    aria-label={t("app.account_menu")}
                     loading={loggingOut}
                     style={{ paddingInline: 8, height: 40 }}
                   >
@@ -384,7 +393,7 @@ export default function App() {
                       </Typography.Text>
                       {!isNarrow && (
                         <Tag color="red" style={{ marginInlineEnd: 0 }}>
-                          {ROLE_LABELS[me.role] ?? me.role}
+                          {ROLE_LABELS()[me.role] ?? me.role}
                         </Tag>
                       )}
                       <DownOutlined style={{ fontSize: 10, color: "rgba(0,0,0,0.45)" }} />

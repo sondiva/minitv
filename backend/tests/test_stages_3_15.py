@@ -447,10 +447,11 @@ def test_register_has_no_password_and_rewards_follow_rules(make, session, client
     assert first.json()["amount"] == 30
     second = client.post("/v1/me/checkin", headers={"Authorization": f"Bearer {token}"})
     assert second.json()["replayed"] is True
+    # KHÓA TẠM (2026-11-16): chưa có SDK quảng cáo nên /v1/me/ad-reward trả 410.
     ad = client.post("/v1/me/ad-reward", headers={"Authorization": f"Bearer {token}"})
-    assert ad.status_code == 200
+    assert ad.status_code == 410
     again = client.post("/v1/me/ad-reward", headers={"Authorization": f"Bearer {token}"})
-    assert again.status_code == 409
+    assert again.status_code == 410
     oauth = client.post("/v1/auth/oauth/tiktok")
     assert oauth.status_code == 501
     # Facebook graduated from the stub to a real endpoint of its own.

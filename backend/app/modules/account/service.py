@@ -482,6 +482,11 @@ def check_in(session: Session, user: User, *, today: date | None = None) -> dict
 
 
 def claim_ad(session: Session, user: User, *, today: date | None = None) -> dict:
+    # KHÓA TẠM (2026-11-16): chưa có SDK quảng cáo để xác minh lượt xem nên
+    # endpoint này đang bị lợi dụng farm 30 xu/ngày bằng một lệnh curl. Trả 410
+    # cho tới khi tích hợp SDK (AdMob/Pangle...) và xác minh phía server.
+    # Mở lại: xóa raise này, giữ nguyên phần còn lại.
+    raise AccountError(410, "ad reward temporarily unavailable")
     today = today or la_today()
     existing = session.scalar(select(AdClaim).where(AdClaim.user_id == user.id, AdClaim.day == today))
     if existing is not None:

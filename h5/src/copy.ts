@@ -793,7 +793,8 @@ const KEY = "minitv_h5_locale";
 
 export function loadLocale(): Locale {
   const saved = localStorage.getItem(KEY);
-  return saved === "zh" || saved === "vi" ? saved : "en";
+  // Default to Vietnamese for this deployment; admin also defaults to vi.
+  return saved === "zh" || saved === "en" ? saved : "vi";
 }
 
 export function saveLocale(locale: Locale) {

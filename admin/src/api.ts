@@ -1,3 +1,5 @@
+import { getLocale } from "./copy";
+
 const TOKEN_KEY = "minitv_admin_token";
 /** Why the last session ended; the login page turns it into a hint. */
 const LOGOUT_REASON_KEY = "minitv_admin_logout_reason";
@@ -102,6 +104,9 @@ export async function api<T = any>(path: string, options: RequestInit = {}): Pro
   // only force a JSON content-type for regular payloads.
   const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   const headers: Record<string, string> = {
+    // Backend error messages switch language by this header (default zh).
+    // Without it every backend error toast in the admin shows Chinese.
+    "Accept-Language": getLocale() === "vi" ? "vi" : "zh",
     ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...((options.headers as Record<string, string>) ?? {}),
   };

@@ -71,6 +71,21 @@ Tên riêng giữ nguyên: MiniTV, Bunny, Stripe, Google, Facebook, Resend.
 | 套餐 | Gói | |
 | 语言 | Ngôn ngữ | |
 | 设置 | Cài đặt | |
+| 接口 (API) | API | KHÔNG dịch thành “giao diện” — 接口 là API endpoint, còn giao diện là UI |
+| 去重 | Loại trùng | KHÔNG dùng “khử trùng” (đó là disinfect) |
+| 开通 (hội viên) | Cấp | VD: 开通会员 = Cấp hội viên; 未开通 = Chưa cấp |
+| 判定 | Quyết định | VD: 自动判定 = Quyết định tự động |
+| 手柄 (kéo thả) | Nút kéo | VD: 拖动左侧手柄 = Kéo nút kéo bên trái |
+| 快照 (quyền lợi) | Tại thời điểm | VD: 下单时权益快照 = Quyền lợi tại thời điểm đặt hàng |
+| 顺延 | Gia hạn | dời thời hạn ra sau |
+| 占全部 | Chiếm … trên tổng số | VD: 占全部 30% = Chiếm 30% trên tổng số |
+
+## Quy tắc dịch (bổ sung 2026-11-16)
+
+- Dấu ngoặc: dùng “ ” kiểu Việt, không dùng 「」 《》 «» kiểu Trung/Pháp.
+- Trong admin không xưng “bạn”; “app” viết thành “ứng dụng”.
+- Admin gửi `Accept-Language: vi` (xem `admin/src/api.ts`) để lỗi từ backend trả về tiếng Việt thay vì tiếng Trung mặc định.
+- Ví dụ cho ô “Tên tiếng Trung” phải giữ ví dụ tiếng Trung (VD: 排行榜), không dịch ví dụ sang tiếng Việt.
 
 ## Quy tắc dịch
 

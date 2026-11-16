@@ -117,7 +117,7 @@ function statusTag(status: string, style?: React.CSSProperties) {
 }
 
 const GROUP_COLS = "64px minmax(160px, 1fr) 170px 100px 320px";
-const DETAIL_COLS = "64px minmax(200px, 1fr) 110px 140px";
+const DETAIL_COLS = "64px minmax(180px, 1fr) 150px 140px";
 
 function ListHead({ columns, labels }: { columns: string; labels: React.ReactNode[] }) {
   return (
@@ -616,7 +616,7 @@ export function GroupDetailPage() {
         showIcon
         message={
           <span style={{ fontSize: 13, color: "#475467" }}>
-            {t("groups.draft_note_prefix")}<strong>{t("common.published")}</strong>{t("groups.draft_note_suffix")}
+            {t("groups.draft_note_prefix")} <strong>{t("common.published")}</strong> {t("groups.draft_note_suffix")}
           </span>
         }
         style={{

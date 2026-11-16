@@ -116,8 +116,8 @@ function statusTag(status: string, style?: React.CSSProperties) {
   );
 }
 
-const GROUP_COLS = "64px minmax(200px, 1fr) 180px 110px 190px";
-const DETAIL_COLS = "64px minmax(220px, 1fr) 110px 80px";
+const GROUP_COLS = "64px minmax(160px, 1fr) 170px 100px 320px";
+const DETAIL_COLS = "64px minmax(200px, 1fr) 110px 140px";
 
 function ListHead({ columns, labels }: { columns: string; labels: React.ReactNode[] }) {
   return (
@@ -290,6 +290,9 @@ export default function GroupsPage() {
             background: "#fff",
           }}
         >
+          {/* Bảng cuộn ngang trong thẻ để nút Thao tác không bị cắt ở màn hình hẹp */}
+          <div style={{ overflowX: "auto" }}>
+            <div style={{ minWidth: 940 }}>
           <ListHead columns={GROUP_COLS} labels={[t("groups.sort_order"), t("groups.group_name"), t("groups.drama_capacity"), t("common.status"), t("common.actions")]} />
           <div style={{ padding: "10px 12px", display: "grid", gap: 6, minHeight: 60 }}>
             {ordered.map((row, index) => {
@@ -469,6 +472,8 @@ export default function GroupsPage() {
               />
             ) : null}
           </div>
+            </div>
+          </div>
         </Card>
       </Spin>
 
@@ -634,6 +639,9 @@ export function GroupDetailPage() {
             background: "#fff",
           }}
         >
+          {/* Bảng cuộn ngang trong thẻ để nút Thao tác không bị cắt ở màn hình hẹp */}
+          <div style={{ overflowX: "auto" }}>
+            <div style={{ minWidth: 640 }}>
           <ListHead columns={DETAIL_COLS} labels={[t("groups.sort_order"), t("groups.drama_info"), t("groups.publish_status"), t("common.actions")]} />
           <div style={{ padding: "10px 12px", display: "grid", gap: 6, minHeight: 60 }}>
             {items.map((row, index) => {
@@ -740,6 +748,8 @@ export function GroupDetailPage() {
                 style={{ margin: "24px 0" }}
               />
             ) : null}
+          </div>
+            </div>
           </div>
         </Card>
       </Spin>

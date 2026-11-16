@@ -221,7 +221,7 @@ export default function Staff() {
         <Input.Search
           allowClear
           placeholder={t("staff.search_account")}
-          style={{ width: 220 }}
+          style={{ width: 280 }}
           onSearch={(value) => setQuery(value.trim())}
         />
         <Select
@@ -232,7 +232,7 @@ export default function Staff() {
         />
         <Select
           value={statusFilter}
-          style={{ width: 130 }}
+          style={{ width: 160 }}
           onChange={setStatusFilter}
           options={[
             { value: "", label: t("common.all_status") },

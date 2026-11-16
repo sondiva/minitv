@@ -79,6 +79,18 @@ Tên riêng giữ nguyên: MiniTV, Bunny, Stripe, Google, Facebook, Resend.
 | 快照 (quyền lợi) | Tại thời điểm | VD: 下单时权益快照 = Quyền lợi tại thời điểm đặt hàng |
 | 顺延 | Gia hạn | dời thời hạn ra sau |
 | 占全部 | Chiếm … trên tổng số | VD: 占全部 30% = Chiếm 30% trên tổng số |
+| 轮换 (khóa) | Xoay khóa | KHÔNG dùng “luân chuyển” (sai nghĩa với khóa) |
+| Agent (trợ lý AI) | Trợ lý AI | khóa API dùng để kết nối trợ lý AI qua CLI |
+| 提示词 (prompt) | Lời nhắc | VD: 系统提示词 = Lời nhắc hệ thống |
+| 数据库 (DB) | Cơ sở dữ liệu | trong giao diện viết đầy đủ, không viết tắt “DB” |
+| Day N (điểm danh) | Ngày N | VD: Day 1 = Ngày 1; Day 6/7 = Ngày 6/7 |
+
+## Quy tắc dịch (bổ sung 2026-11-16, đợt 4)
+
+- Tên nhiệm vụ xu (注册奖励, 绑定邮箱…) do backend trả về theo `Accept-Language`: backend phải dịch theo từng request, KHÔNG được gọi `t()` ở cấp module lúc import (sẽ đóng băng tiếng Trung) — xem `REWARD_TASK_I18N` trong `backend/app/modules/account/service.py`.
+- Ngày giờ hiển thị dùng `toLocaleString("vi-VN")`, không dùng `toLocaleString()` mặc định (trình duyệt tiếng Anh sẽ hiện kiểu Mỹ).
+- Ngoặc đơn trong tab đếm số dùng `()` nửa giác, không dùng `（）` toàn giác.
+- “Ba gói hội viên” trong văn bản là sai số lượng thật (hiện chỉ có 2 gói Weekly/Monthly) — viết “các gói hội viên”.
 
 ## Quy tắc dịch (bổ sung 2026-11-16)
 

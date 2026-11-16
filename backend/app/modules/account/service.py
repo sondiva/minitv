@@ -112,9 +112,33 @@ REWARD_TASKS: tuple[dict, ...] = (
 REWARD_TASK_BY_CODE = {task["code"]: task for task in REWARD_TASKS}
 
 
+# i18n keys for the task names/descriptions. They must be resolved per request
+# (see localized_task below): resolving them here at import time would bake in
+# the default locale (zh) for every request, which is what used to happen.
+REWARD_TASK_I18N: dict[str, tuple[str, str]] = {
+    "checkin": ("reward.checkin_name", "reward.checkin_desc"),
+    "register": ("reward.register_name", "reward.register_desc"),
+    "bind_email": ("reward.bind_email_name", "reward.bind_email_desc"),
+    "bind_facebook": ("reward.bind_facebook_name", "reward.bind_facebook_desc"),
+    "ad": ("reward.ad_name", "reward.ad_desc"),
+    "like_5": ("reward.like5_name", "reward.like5_desc"),
+    "favorite_5": ("reward.favorite5_name", "reward.favorite5_desc"),
+    "watch_8": ("reward.watch8_name", "reward.watch8_desc"),
+}
+
+
+def localized_task(task: dict) -> dict:
+    """Copy of a REWARD_TASKS entry with name/description in the request locale."""
+    item = dict(task, amounts=list(task["amounts"]))
+    name_key, desc_key = REWARD_TASK_I18N[task["code"]]
+    item["name"] = t(name_key)
+    item["description"] = t(desc_key)
+    return item
+
+
 def reward_task_catalog() -> list[dict]:
     """A defensive copy of the catalog (callers may mutate the amounts)."""
-    return [dict(task, amounts=list(task["amounts"])) for task in REWARD_TASKS]
+    return [localized_task(task) for task in REWARD_TASKS]
 
 
 class AccountError(Exception):
@@ -491,6 +515,7 @@ def reward_config_overview(session: Session, *, today: date | None = None) -> di
     today = today or la_today()
     items = []
     for task in REWARD_TASKS:
+        localized = localized_task(task)
         rows = session.scalars(
             select(RewardConfig)
             .where(RewardConfig.code == task["code"])
@@ -501,8 +526,8 @@ def reward_config_overview(session: Session, *, today: date | None = None) -> di
         items.append(
             {
                 "code": task["code"],
-                "name": task["name"],
-                "description": task["description"],
+                "name": localized["name"],
+                "description": localized["description"],
                 "kind": task["kind"],
                 "period": task.get("period", "once"),
                 "metric": task.get("metric"),

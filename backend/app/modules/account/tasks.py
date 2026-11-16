@@ -29,6 +29,7 @@ from app.modules.account.service import (
     _active_amount,
     _credit,
     la_today,
+    localized_task,
 )
 from app.modules.ops.config_models import Checkin, RewardConfig, TaskClaim
 from app.modules.playback.models import PlaybackEvent
@@ -134,12 +135,13 @@ def tasks_overview(
     user_id = None if user is None else user.id
     items = []
     for task in DAILY_TASKS:
+        localized = localized_task(task)
         progress = task_progress(session, user_id, task, day) if user_id is not None else 0
         items.append(
             {
                 "code": task["code"],
-                "name": task["name"],
-                "description": task["description"],
+                "name": localized["name"],
+                "description": localized["description"],
                 "metric": task["metric"],
                 "target": int(task["target"]),
                 "progress": progress,

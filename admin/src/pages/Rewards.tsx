@@ -1151,7 +1151,7 @@ export default function Rewards() {
                   </Dropdown>
                   <Tooltip title={t("rewards.live_version_time")}>
                     <Tag icon={<CheckCircleOutlined />} color="default">
-                      {t("rewards.current_version_label")}
+                      {t("rewards.current_version_label")}{" "}
                       {checkin.current.is_default || !checkin.current.effective_on
                         ? t("rewards.builtin_default")
                         : t("rewards.effective_from_checkin", {v0: checkin.current.effective_on})}

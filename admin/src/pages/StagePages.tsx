@@ -431,7 +431,7 @@ export function DashboardPage() {
           <Select
             value={days}
             onChange={setDays}
-            style={{ width: 110 }}
+            style={{ width: 160 }}
             options={[
               { value: 7, label: t("dashboard.last_7_days") },
               { value: 14, label: t("dashboard.last_14_days") },
@@ -1803,7 +1803,7 @@ export function CommentsPage() {
             title: t("finance.time"),
             dataIndex: "created_at",
             width: 150,
-            render: (value: string | null) => (value ? new Date(value).toLocaleString() : "-"),
+            render: (value: string | null) => (value ? new Date(value).toLocaleString("vi-VN") : "-"),
           },
           {
             title: t("common.actions"),
@@ -2338,7 +2338,7 @@ export function FinancePage() {
             <Select
               size="small"
               value={mode}
-              style={{ width: 120 }}
+              style={{ width: 160 }}
               onChange={(value) => {
                 setMode(value);
                 setPage(1);

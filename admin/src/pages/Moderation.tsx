@@ -489,7 +489,7 @@ export default function Moderation() {
           </Button>
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
             {data?.updated_at
-              ? t("moderation.last_saved", {v0: new Date(data.updated_at).toLocaleString()})
+              ? t("moderation.last_saved", {v0: new Date(data.updated_at).toLocaleString("vi-VN")})
               : t("moderation.never_saved")}
           </Typography.Text>
         </Space>

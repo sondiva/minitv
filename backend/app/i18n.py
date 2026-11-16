@@ -190,7 +190,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "plan.weekly_name": "周卡",
         "plan.monthly_name": "月卡",
         "plan.yearly_name": "年卡",
-        # -- rewards (seed data; resolved at seed time, i.e. zh) ---------------
+        # -- rewards (resolved per request via REWARD_TASK_I18N) ----------------
         "reward.checkin_name": "7 天签到梯度",
         "reward.checkin_desc": "连续签到第 1-7 天依次发放；中断后从第 1 天重新计算",
         "reward.register_name": "注册奖励",
@@ -341,7 +341,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "plan.weekly_name": "Thẻ tuần",
         "plan.monthly_name": "Thẻ tháng",
         "plan.yearly_name": "Thẻ năm",
-        # -- rewards (seed data; resolved at seed time, i.e. zh) ---------------
+        # -- rewards (resolved per request via REWARD_TASK_I18N) ----------------
         "reward.checkin_name": "Thang điểm danh 7 ngày",
         "reward.checkin_desc": "Phát lần lượt từ ngày điểm danh 1–7; nếu gián đoạn thì tính lại từ ngày 1",
         "reward.register_name": "Thưởng đăng ký",
@@ -362,7 +362,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "apikey.rate_limited": "Khóa đã vượt giới hạn {limit} lần/phút",
         "apikey.invalid": "API key không hợp lệ",
         "apikey.revoked": "API key đã bị thu hồi",
-        "apikey.expired": "API key đã hết hạn, hãy luân chuyển key",
+        "apikey.expired": "API key đã hết hạn, hãy xoay khóa",
         "apikey.scope_missing": "Khóa này thiếu quyền {scopes}",
         "apikey.scope_required": "Hãy chọn ít nhất một quyền; nếu muốn theo vai trò của tài khoản thì bỏ qua trường scopes",
         "apikey.unknown_scope": "scope không xác định: {unknown} (có thể chọn {choices})",

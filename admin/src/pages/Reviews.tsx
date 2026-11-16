@@ -149,7 +149,7 @@ export default function Reviews() {
         }}
         items={TABS().map((tab) => ({
           key: tab.key,
-          label: `${tab.label}（${counts[tab.key as keyof typeof counts] ?? 0}）`,
+          label: `${tab.label} (${counts[tab.key as keyof typeof counts] ?? 0})`,
         }))}
       />
 

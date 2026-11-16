@@ -358,7 +358,7 @@ export default function Dramas() {
               <Select
                 allowClear
                 placeholder={t("common.all_status")}
-                style={{ width: 130 }}
+                style={{ width: 160 }}
                 value={status}
                 onChange={(v) => {
                   setPage(1);
